@@ -23,6 +23,10 @@ spec:
               port: 5003
             initialDelaySeconds: 3
             periodSeconds: 3
+          resources:
+            requests:
+              memory: 20Mi
+              cpu: 100m
           env:
             - name: CAPTAIN_URL
               value: "http://captain-svc.default.svc.cluster.local"

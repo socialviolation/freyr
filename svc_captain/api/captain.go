@@ -20,7 +20,7 @@ type CaptainController struct {
 
 func NewCaptainController() *CaptainController {
 	return &CaptainController{
-		timeout:    time.Second * 30,
+		timeout:    time.Second * 10,
 		conscripts: make(map[string]Conscript),
 	}
 }
@@ -55,8 +55,13 @@ func (c *CaptainController) schedulePurger() chan bool {
 
 	go func() {
 		for {
-			log.Info().Msgf("purging %d conscripts", len(c.conscripts))
-			c.conscripts = make(map[string]Conscript)
+			for k, v := range c.conscripts {
+				if time.Since(v.LastSeen) > c.timeout {
+					log.Info().Msgf("purging %s", k)
+					delete(c.conscripts, k)
+				}
+			}
+
 			select {
 			case <-time.After(c.timeout):
 			case <-stop:
