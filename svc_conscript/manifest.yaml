@@ -25,4 +25,4 @@ spec:
             periodSeconds: 3
           env:
             - name: CAPTAIN_URL
-              value: "http://freyr-captain-svc.default.svc.cluster.local"
+              value: "http://captain-svc.default.svc.cluster.local"
