@@ -13,23 +13,23 @@ import (
 	"time"
 )
 
-func conscriptRequest(host string) error {
-	_, err := http.Get(fmt.Sprintf("http://%s/enlist", host))
+func conscriptRequest(url string) error {
+	_, err := http.Get(fmt.Sprintf("%s/enlist", url))
 	if err != nil {
 		return err
 	}
-	log.Info().Msg("enlisted")
+	log.Info().Msgf("enlisted to %s", url)
 	return nil
 }
 
-func scheduleConscription(host string, d time.Duration) chan bool {
+func scheduleConscription(url string, d time.Duration) chan bool {
 	stop := make(chan bool)
 
 	go func() {
 		for {
-			err := conscriptRequest(host)
+			err := conscriptRequest(url)
 			if err != nil {
-				log.Error().Err(err).Msg("error enlisting")
+				log.Error().Err(err).Msgf("error enlisting to %s", url)
 			}
 			select {
 			case <-time.After(d):
@@ -57,14 +57,14 @@ func setupRoutes() *chi.Mux {
 
 func main() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetDefault("host.port", 5003)
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("")
 	viper.SetDefault("host.name", "0.0.0.0")
-	viper.SetDefault("captain.host", "localhost:5001")
+	viper.SetDefault("host.port", 5003)
+	viper.SetDefault("captain.url", "http://freyr-captain:5001")
 
-	host := viper.GetString("captain.host")
-	log.Info().Msgf("host.name: %s", host)
-
-	stopConscription := scheduleConscription(host, time.Second*5)
+	url := viper.GetString("captain.url")
+	stopConscription := scheduleConscription(url, time.Second*5)
 	defer close(stopConscription)
 
 	r := setupRoutes()
@@ -77,19 +77,12 @@ func main() {
 	}
 
 	go func() {
-		log.Info().Msg("serving on " + srv.Addr)
 		if err := srv.ListenAndServe(); err != nil {
 			log.Error().Err(err).Msg("error during listen and serve")
+			return
 		}
+		log.Info().Msgf("serving @ %s", srv.Addr)
 	}()
-
-	e := chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
-		fmt.Printf("[%s]: '%s' has %d middlewares\n", method, route, len(middlewares))
-		return nil
-	})
-	if e != nil {
-		log.Error().Err(e).Msg("error walking router")
-	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

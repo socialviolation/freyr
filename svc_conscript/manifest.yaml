@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freyr-conscript-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: freyr-conscript
+  template:
+    metadata:
+      labels:
+        app: freyr-conscript
+    spec:
+      containers:
+        - name: freyr-conscript
+          image: freyr-conscript:latest
+          ports:
+            - containerPort: 5003
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 5003
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          env:
+            - name: CAPTAIN_URL
+              value: "http://freyr-captain-svc.default.svc.cluster.local"
