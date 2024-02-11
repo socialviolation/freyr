@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 )
 
@@ -47,16 +48,21 @@ func setupRoutes() *chi.Mux {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Heartbeat("/ping"))
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("."))
+	})
+
 	return r
 }
 
 func main() {
-	log.Info().Msgf("host.name: %s", viper.GetString("host.name"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetDefault("host.port", 5003)
-	viper.SetDefault("host.name", "localhost")
+	viper.SetDefault("host.name", "0.0.0.0")
 	viper.SetDefault("captain.host", "localhost:5001")
 
 	host := viper.GetString("captain.host")
+	log.Info().Msgf("host.name: %s", host)
 
 	stopConscription := scheduleConscription(host, time.Second*5)
 	defer close(stopConscription)
@@ -76,6 +82,14 @@ func main() {
 			log.Error().Err(err).Msg("error during listen and serve")
 		}
 	}()
+
+	e := chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		fmt.Printf("[%s]: '%s' has %d middlewares\n", method, route, len(middlewares))
+		return nil
+	})
+	if e != nil {
+		log.Error().Err(e).Msg("error walking router")
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
