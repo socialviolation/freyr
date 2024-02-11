@@ -13,8 +13,8 @@ spec:
         app: freyr-captain
     spec:
       containers:
-        - name: freyr-captain
-          image: freyr-captain:latest
+        - name: captain
+          image: australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest
           ports:
             - containerPort: 5001
           livenessProbe:
