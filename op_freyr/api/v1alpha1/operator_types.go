@@ -20,22 +20,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // OperatorSpec defines the desired state of Operator
 type OperatorSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Operator. Edit operator_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=weather;trig
+	// +kubebuilder:validation:default:=weather
+	Mode string `json:"mode,omitempty"`
+	// +kubebuilder:validation:Optional
+	Weather WeatherMode `json:"weather,omitempty"`
+	// +kubebuilder:validation:Optional
+	Trig TrigMode `json:"trig,omitempty"`
+}
+
+type WeatherMode struct {
+	// +kubebuilder:validation:Required
+	Country string `json:"country,omitempty"`
+	// +kubebuilder:validation:Required
+	City string `json:"city,omitempty"`
+	// +kubebuilder:validation:Required
+	APIKey string `json:"apiKey,omitempty"`
+}
+
+type TrigMode struct {
+	Period float64 `json:"period,omitempty"`
+	Min    int32   `json:"min,omitempty"`
+	Max    int32   `json:"max,omitempty"`
 }
 
 // OperatorStatus defines the observed state of Operator
 type OperatorStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+kubebuilder:object:root=true
