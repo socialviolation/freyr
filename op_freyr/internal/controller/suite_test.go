@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	freyrv1alpha1 "github.com/socialviolation/freyr/api/v1alpha1"
+	freyrv1alpha1 "github.com/socialviolation/freyr/op_freyr/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

@@ -5,18 +5,15 @@ import (
 	"time"
 )
 
-func GetValue(seconds float64, min, max int32) int32 {
+func GetValue(seconds int32, min, max int32) int32 {
 	// Get the current time
 	currentTime := time.Now()
 
 	// Calculate the elapsed time in seconds since the start of the hour
 	elapsedSeconds := float64(currentTime.Minute()*60 + currentTime.Second())
 
-	// Define the period of the function (in seconds)
-	period := seconds // 1800 seconds = 30 minutes
-
 	// Calculate the angle (in radians) based on the elapsed time and period
-	angle := 2 * math.Pi * elapsedSeconds / period
+	angle := 2 * math.Pi * elapsedSeconds / float64(seconds)
 
 	// Calculate the trigonometric function (you can use sine, cosine, or any other trigonometric function)
 	value := math.Sin(angle)

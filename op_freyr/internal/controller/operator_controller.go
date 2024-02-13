@@ -19,9 +19,9 @@ package controller
 import (
 	"context"
 	"fmt"
-	freyrv1alpha1 "github.com/socialviolation/freyr/api/v1alpha1"
-	"github.com/socialviolation/freyr/internal/openweather"
-	"github.com/socialviolation/freyr/internal/trig"
+	freyrv1alpha1 "github.com/socialviolation/freyr/op_freyr/api/v1alpha1"
+	"github.com/socialviolation/freyr/op_freyr/internal/openweather"
+	"github.com/socialviolation/freyr/op_freyr/internal/trig"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -42,9 +42,9 @@ type OperatorReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=freyr.freyr.fmtl.au,resources=operators,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=freyr.freyr.fmtl.au,resources=operators/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=freyr.freyr.fmtl.au,resources=operators/finalizers,verbs=update
+//+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -234,7 +234,7 @@ func (r *OperatorReconciler) serviceForCaptain(c *freyrv1alpha1.Operator, d *app
 		Spec: corev1.ServiceSpec{
 			Selector: labelsForCaptain(),
 			Ports: []corev1.ServicePort{{
-				Name:     "TCP",
+				Name:     "http",
 				Protocol: "TCP",
 				Port:     int32(80),
 				TargetPort: intstr.IntOrString{

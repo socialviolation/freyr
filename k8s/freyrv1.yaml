@@ -3,14 +3,19 @@ kind: Operator
 metadata:
   labels:
     app.kubernetes.io/name: operator
-    app.kubernetes.io/instance: operator-sample
+    app.kubernetes.io/instance: demo
     app.kubernetes.io/part-of: op-freyr
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: op-freyr
-  name: operator-sample
+  name: demo
 spec:
-  mode: weather
-  weather:
-    country: "AU"
-    city: "Melbourne"
-    apiKey: "xxx"
+  mode: trig
+  trig:
+    period: 300
+    min: 1
+    max: 20
+#  mode: weather
+#  weather:
+#    country: "AU"
+#    city: "Melbourne"
+#    apiKey: "xxx"

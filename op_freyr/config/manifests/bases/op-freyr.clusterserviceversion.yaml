@@ -1,0 +1,52 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: op-freyr.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Operator is the Schema for the operators API
+      displayName: Operator
+      kind: Operator
+      name: operators.freyr.fmtl.au
+      version: v1alpha1
+  description: Freyr is an example Kubernetes Operator, which scales a captain/conscript
+    microservice based on the weather
+  displayName: freyr
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - freyr
+  - captain
+  - conscript
+  - operator
+  links:
+  - name: Op Freyr
+    url: https://op-freyr.domain
+  maintainers:
+  - email: nickfmtl.au
+    name: nick
+  maturity: alpha
+  provider:
+    name: fmtl.au
+    url: fm
+  version: 0.0.0

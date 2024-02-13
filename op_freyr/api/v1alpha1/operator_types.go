@@ -46,9 +46,9 @@ type WeatherMode struct {
 }
 
 type TrigMode struct {
-	Period float64 `json:"period,omitempty"`
-	Min    int32   `json:"min,omitempty"`
-	Max    int32   `json:"max,omitempty"`
+	Period int32 `json:"period,omitempty"`
+	Min    int32 `json:"min,omitempty"`
+	Max    int32 `json:"max,omitempty"`
 }
 
 // OperatorStatus defines the observed state of Operator

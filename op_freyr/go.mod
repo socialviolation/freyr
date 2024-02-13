@@ -1,9 +1,8 @@
-module github.com/socialviolation/freyr
+module github.com/socialviolation/freyr/op_freyr
 
 go 1.20
 
 require (
-	github.com/briandowns/openweathermap v0.19.0
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
 	k8s.io/api v0.27.2

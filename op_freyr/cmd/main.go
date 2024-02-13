@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	freyrv1alpha1 "github.com/socialviolation/freyr/api/v1alpha1"
-	"github.com/socialviolation/freyr/internal/controller"
+	freyrv1alpha1 "github.com/socialviolation/freyr/op_freyr/api/v1alpha1"
+	"github.com/socialviolation/freyr/op_freyr/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 

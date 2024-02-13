@@ -78,6 +78,9 @@ func GetTempByCountry(apikey, country, city string) (LatLonTemp, error) {
 func GetTemp(apikey string, c LatLonTemp) (LatLonTemp, error) {
 	url := fmt.Sprintf("https://api.openweathermap.org/data/3.0/onecall?lat=%f&lon=%f&exclude=hourly,daily&appid=%s", c.Lat, c.Lon, apikey)
 	resp, err := http.Get(url)
+	if err != nil {
+		return LatLonTemp{}, err
+	}
 
 	defer resp.Body.Close()
 	var current currentResponse

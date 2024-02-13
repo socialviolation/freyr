@@ -15,9 +15,9 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: freyr.fmtl.au
+  domain: fmtl.au
   group: freyr
   kind: Operator
-  path: github.com/socialviolation/freyr/api/v1alpha1
+  path: github.com/socialviolation/freyr/op_freyr/api/v1alpha1
   version: v1alpha1
 version: "3"
