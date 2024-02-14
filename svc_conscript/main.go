@@ -64,7 +64,7 @@ func main() {
 	viper.SetDefault("captain.url", "http://freyr-captain:5001")
 
 	url := viper.GetString("captain.url")
-	stopConscription := scheduleConscription(url, time.Second*5)
+	stopConscription := scheduleConscription(url, time.Second*1)
 	defer close(stopConscription)
 
 	r := setupRoutes()

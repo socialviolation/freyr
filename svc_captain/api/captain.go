@@ -20,7 +20,7 @@ type CaptainController struct {
 
 func NewCaptainController() *CaptainController {
 	return &CaptainController{
-		timeout:    time.Second * 10,
+		timeout:    time.Second * 3,
 		conscripts: make(map[string]Conscript),
 	}
 }
@@ -42,9 +42,22 @@ func (c *CaptainController) enlist(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type docketResponse struct {
+	Mode       string               `json:"mode"`
+	Total      int                  `json:"total"`
+	Conscripts map[string]time.Time `json:"conscripts"`
+}
+
 func (c *CaptainController) docket(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(c.conscripts)
+	dr := docketResponse{
+		Total:      len(c.conscripts),
+		Conscripts: make(map[string]time.Time),
+	}
+	for k, v := range c.conscripts {
+		dr.Conscripts[k] = v.LastSeen
+	}
+	err := json.NewEncoder(w).Encode(dr)
 	if err != nil {
 		log.Error().Err(err).Msg("error encoding conscripts")
 	}

@@ -129,28 +129,10 @@ func getStart(s time.Time, d time.Duration) (time.Time, int) {
 	numDurations := int(elapsed / d)
 	mostRecentIncrement := s.Add(time.Duration(numDurations) * d)
 	secondsSinceIncrement := int(now.Sub(mostRecentIncrement).Seconds())
-	//fmt.Printf("Number of time durations passed: %d\n", numDurations)
-	//fmt.Printf("Seconds since the most recent increment: %d\n", secondsSinceIncrement)
-
 	return mostRecentIncrement, secondsSinceIncrement
 }
 
 func translate(x, inMin, inMax, outMin, outMax float64) float64 {
 	proportion := (x - inMin) / (inMax - inMin)
 	return outMin + proportion*(outMax-outMin)
-}
-
-func constrain(value, min, max float64) int {
-	rangeValue := max - min
-	numIndexes := int(math.Ceil(rangeValue))
-
-	stepSize := rangeValue / float64(numIndexes)
-	index := int((value - min) / stepSize)
-	if index < 0 {
-		index = 0
-	}
-	if index >= numIndexes {
-		index = numIndexes - 1
-	}
-	return index
 }
