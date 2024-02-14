@@ -19,9 +19,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/socialviolation/freyr/modes/openweather"
+	"github.com/socialviolation/freyr/modes/trig"
 	freyrv1alpha1 "github.com/socialviolation/freyr/op_freyr/api/v1alpha1"
-	"github.com/socialviolation/freyr/op_freyr/internal/openweather"
-	"github.com/socialviolation/freyr/op_freyr/internal/trig"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -69,7 +69,11 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	targetConscripts := int32(1)
 	if freyrOp.Spec.Mode == "weather" {
-		llt, err := openweather.GetTempByCountry(freyrOp.Spec.Weather.APIKey, freyrOp.Spec.Weather.Country, freyrOp.Spec.Weather.City)
+		l := openweather.Location{
+			Country: freyrOp.Spec.Weather.Country,
+			City:    freyrOp.Spec.Weather.City,
+		}
+		llt, err := openweather.GetTempByCountry(freyrOp.Spec.Weather.APIKey, l)
 		if err != nil {
 			log.Error(err, "Failed to retrieve weather")
 		}
