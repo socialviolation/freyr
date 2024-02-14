@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/socialviolation/freyr/modes"
 	"net/http"
 	"time"
 )
@@ -43,7 +44,7 @@ func (c *CaptainController) enlist(w http.ResponseWriter, r *http.Request) {
 }
 
 type docketResponse struct {
-	Mode       string               `json:"mode"`
+	Spec       modes.OperatorSpec   `json:"operator"`
 	Total      int                  `json:"total"`
 	Conscripts map[string]time.Time `json:"conscripts"`
 }

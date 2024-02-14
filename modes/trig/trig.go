@@ -66,7 +66,7 @@ func RenderValues(a Args) string {
 		for col := range canvas[row] {
 			if col < canvasAxisOffset {
 				currentTransNode := canvasHeight - row
-				nodeY := int(translate(float64(currentTransNode), 0, float64(canvasHeight-1), float64(a.Min), float64(a.Max)))
+				nodeY := int(translate(float64(currentTransNode), 0, float64(canvasHeight-1), float64(a.Min), float64(a.Max))) - 1
 				canvas[row][col] = fmt.Sprintf("%-*d", canvasAxisPadding, nodeY)
 				continue
 			}

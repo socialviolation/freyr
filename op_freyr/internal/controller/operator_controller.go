@@ -75,11 +75,25 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 		llt, err := openweather.GetTempByCountry(freyrOp.Spec.Weather.APIKey, l)
 		if err != nil {
+
 			log.Error(err, "Failed to retrieve weather")
 		}
 		targetConscripts = llt.Temp
 	} else if freyrOp.Spec.Mode == "trig" {
-		targetConscripts = trig.GetValue(freyrOp.Spec.Trig.Period, freyrOp.Spec.Trig.Min, freyrOp.Spec.Trig.Max)
+		args := trig.Args{
+			Duration: freyrOp.Spec.Trig.Duration,
+			Min:      freyrOp.Spec.Trig.Min,
+			Max:      freyrOp.Spec.Trig.Max,
+		}
+		if freyrOp.Spec.Trig.Start != "" {
+			args.Start, _ = time.Parse(time.RFC3339, freyrOp.Spec.Trig.Start)
+		}
+		fv, err := trig.GetValue(args)
+		if err != nil {
+			log.Error(err, "Failed to retrieve trig value")
+		} else {
+			targetConscripts = int32(fv)
+		}
 	}
 
 	// Check if the deployment already exists, if not create a new one

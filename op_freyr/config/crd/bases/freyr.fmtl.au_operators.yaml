@@ -48,8 +48,9 @@ spec:
                     format: int32
                     type: integer
                   period:
-                    format: int32
-                    type: integer
+                    type: string
+                  start:
+                    type: string
                 type: object
               weather:
                 properties:
