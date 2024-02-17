@@ -1,8 +1,8 @@
 mode: trig
 trig:
-  period: 300
-  min: 1
-  max: 20
+  duration: 30m
+  min: 2
+  max: 18
 #mode: weather
 #weather:
 #  country: "AU"

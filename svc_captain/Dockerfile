@@ -1,10 +1,13 @@
 FROM golang:1.21 as builder
-WORKDIR /app
-COPY go.mod go.sum ./
+WORKDIR /app/modes
+COPY modes .
+WORKDIR /app/svc_captain
+COPY svc_captain/go.mod svc_captain/go.sum svc_captain/go.work svc_captain/go.work.sum ./
+RUN go work use
 RUN go mod download
 RUN go mod verify
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /captain .
+COPY svc_captain .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /captain main.go
 
 
 FROM gcr.io/distroless/static-debian11

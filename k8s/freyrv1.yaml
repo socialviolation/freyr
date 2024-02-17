@@ -11,9 +11,9 @@ metadata:
 spec:
   mode: trig
   trig:
-    period: 300
-    min: 1
-    max: 20
+    duration: 120s
+    min: 2
+    max: 18
 #  mode: weather
 #  weather:
 #    country: "AU"

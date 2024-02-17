@@ -22,7 +22,11 @@ func setupRoutes() *chi.Mux {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Heartbeat("/ping"))
 
-	cptn := api.NewCaptainController()
+	cptn, err := api.NewCaptainController()
+	if err != nil {
+		log.Error().Err(err).Msg("error creating captain controller")
+		os.Exit(1)
+	}
 	cptn.Serve(r)
 
 	return r

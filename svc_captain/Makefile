@@ -1,6 +1,6 @@
 
 docker.build:
-	docker build -t freyr/captain .
+	cd .. && docker build -t freyr/captain -f svc_captain/Dockerfile .
 
 docker.push:
 	docker tag freyr/captain australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest

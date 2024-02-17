@@ -46,8 +46,7 @@ type WeatherMode struct {
 }
 
 type TrigMode struct {
-	Start    string `json:"start,omitempty"`
-	Duration string `json:"period,omitempty"`
+	Duration string `json:"duration,omitempty"`
 	Min      int32  `json:"min,omitempty"`
 	Max      int32  `json:"max,omitempty"`
 }

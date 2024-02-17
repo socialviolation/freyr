@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/socialviolation/freyr/modes/openweather"
 	"github.com/socialviolation/freyr/modes/trig"
@@ -67,33 +68,37 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	targetConscripts := int32(1)
-	if freyrOp.Spec.Mode == "weather" {
-		l := openweather.Location{
-			Country: freyrOp.Spec.Weather.Country,
-			City:    freyrOp.Spec.Weather.City,
-		}
-		llt, err := openweather.GetTempByCountry(freyrOp.Spec.Weather.APIKey, l)
+	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", freyrOp.Namespace)
+	configMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: freyrOp.Namespace}, configMap)
+	if err != nil && errors.IsNotFound(err) {
+		opJson, err := json.Marshal(freyrOp.Spec)
 		if err != nil {
+			log.Error(err, "Failed to marshal Operator spec")
+			return ctrl.Result{}, err
+		}
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "config",
+				Namespace: freyrOp.Namespace,
+			},
+			Data: map[string]string{
+				"CAPTAIN_URL":     captainUrl,
+				"OPERATOR_CONFIG": string(opJson),
+			},
+		}
+		err = r.Create(ctx, cm)
+		if err != nil {
+			log.Error(err, "Failed to create new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
+			return ctrl.Result{}, err
+		}
 
-			log.Error(err, "Failed to retrieve weather")
-		}
-		targetConscripts = llt.Temp
-	} else if freyrOp.Spec.Mode == "trig" {
-		args := trig.Args{
-			Duration: freyrOp.Spec.Trig.Duration,
-			Min:      freyrOp.Spec.Trig.Min,
-			Max:      freyrOp.Spec.Trig.Max,
-		}
-		if freyrOp.Spec.Trig.Start != "" {
-			args.Start, _ = time.Parse(time.RFC3339, freyrOp.Spec.Trig.Start)
-		}
-		fv, err := trig.GetValue(args)
+		err = ctrl.SetControllerReference(freyrOp, configMap, r.Scheme)
 		if err != nil {
-			log.Error(err, "Failed to retrieve trig value")
-		} else {
-			targetConscripts = int32(fv)
+			log.Error(err, "Failed to register Operator config map")
+			return ctrl.Result{}, err
 		}
+		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 	}
 
 	// Check if the deployment already exists, if not create a new one
@@ -101,7 +106,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: freyrOp.Namespace}, captainDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForCaptain(freyrOp)
+		dep := r.deploymentForCaptain(freyrOp, configMap)
 		if dep == nil {
 			log.Error(err, "Failed to create new Deployment")
 			return ctrl.Result{}, err
@@ -113,7 +118,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Captain Deployment")
 		return ctrl.Result{}, err
@@ -131,7 +136,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Service")
 		return ctrl.Result{}, err
@@ -154,7 +159,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Conscript Deployment")
 		return ctrl.Result{}, err
@@ -170,6 +175,35 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 		// Spec updated - return and requeue
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+	}
+
+	targetConscripts := int32(1)
+	if freyrOp.Spec.Mode == "weather" {
+		l := openweather.Location{
+			Country: freyrOp.Spec.Weather.Country,
+			City:    freyrOp.Spec.Weather.City,
+		}
+		llt, err := openweather.GetTempByCountry(freyrOp.Spec.Weather.APIKey, l)
+		if err != nil {
+
+			log.Error(err, "Failed to retrieve weather")
+		}
+		targetConscripts = llt.Temp
+		log.Info("Reconciling Weather mode", "conscripts", targetConscripts)
+	} else if freyrOp.Spec.Mode == "trig" {
+		args := trig.Args{
+			Duration: freyrOp.Spec.Trig.Duration,
+			Min:      freyrOp.Spec.Trig.Min,
+			Max:      freyrOp.Spec.Trig.Max,
+		}
+		fv, err := trig.GetValue(args)
+		if err != nil {
+			log.Error(err, "Failed to retrieve trig value")
+		} else {
+			targetConscripts = int32(fv)
+		}
+		log.Info("Reconciling Trig mode", "conscripts", targetConscripts, "duration", freyrOp.Spec.Trig.Duration, "min", freyrOp.Spec.Trig.Min, "max", freyrOp.Spec.Trig.Max)
+		//log.Info(trig.RenderValues(args))
 	}
 
 	if *conscriptDep.Spec.Replicas != targetConscripts {
@@ -199,7 +233,7 @@ func labelsForCaptain() map[string]string {
 	return map[string]string{"app": "captain"}
 }
 
-func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator) *appsv1.Deployment {
+func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator, config *corev1.ConfigMap) *appsv1.Deployment {
 	replicas := int32(1)
 	ls := labelsForCaptain()
 
@@ -230,6 +264,26 @@ func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator) *ap
 								corev1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
+						Env: []corev1.EnvVar{{
+							Name: "OPERATOR_CONFIG",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: config.Name,
+									},
+								},
+							},
+						}},
+						EnvFrom: []corev1.EnvFromSource{{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: config.Name,
+								},
+							},
+						}},
 					}},
 				},
 			},

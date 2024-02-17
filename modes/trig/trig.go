@@ -9,7 +9,6 @@ import (
 
 type Args struct {
 	Duration string
-	Start    time.Time
 	Min      int32
 	Max      int32
 	Current  int32
@@ -28,7 +27,7 @@ func RenderValues(a Args) string {
 	if err != nil {
 		return "could not render chart"
 	}
-	start, secondsSinceIncrement := getStart(a.Start, duration)
+	_, secondsSinceIncrement := getStart(duration)
 	dSeconds := duration.Seconds()
 	results := make([]float64, int(dSeconds))
 	var yMin, yMax float64
@@ -36,7 +35,6 @@ func RenderValues(a Args) string {
 	for i := 1; i <= int(dSeconds)-1; i++ {
 		args := Args{
 			Duration: a.Duration,
-			Start:    start,
 			Min:      a.Min,
 			Max:      a.Max,
 			Current:  int32(i),
@@ -112,7 +110,7 @@ func GetValue(a Args) (float64, error) {
 	}
 
 	if a.Current == 0 {
-		_, secondsSinceIncrement := getStart(a.Start, d)
+		_, secondsSinceIncrement := getStart(d)
 		a.Current = int32(secondsSinceIncrement)
 	}
 
@@ -120,11 +118,10 @@ func GetValue(a Args) (float64, error) {
 	return math.Sin(angle), nil
 }
 
-func getStart(s time.Time, d time.Duration) (time.Time, int) {
+func getStart(d time.Duration) (time.Time, int) {
 	now := time.Now()
-	if (s == time.Time{}) {
-		s = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	}
+	s := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
 	elapsed := now.Sub(s)
 	numDurations := int(elapsed / d)
 	mostRecentIncrement := s.Add(time.Duration(numDurations) * d)

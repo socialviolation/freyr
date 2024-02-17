@@ -41,16 +41,14 @@ spec:
                 type: string
               trig:
                 properties:
+                  duration:
+                    type: string
                   max:
                     format: int32
                     type: integer
                   min:
                     format: int32
                     type: integer
-                  period:
-                    type: string
-                  start:
-                    type: string
                 type: object
               weather:
                 properties:
