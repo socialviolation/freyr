@@ -203,7 +203,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			targetConscripts = int32(fv)
 		}
 		log.Info("Reconciling Trig mode", "conscripts", targetConscripts, "duration", freyrOp.Spec.Trig.Duration, "min", freyrOp.Spec.Trig.Min, "max", freyrOp.Spec.Trig.Max)
-		//log.Info(trig.RenderValues(args))
+		//log.Info(trig.RenderChart(args))
 	}
 
 	if *conscriptDep.Spec.Replicas != targetConscripts {
@@ -264,19 +264,6 @@ func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator, con
 								corev1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
-						Env: []corev1.EnvVar{{
-							Name: "OPERATOR_CONFIG",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
-								},
-								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: config.Name,
-									},
-								},
-							},
-						}},
 						EnvFrom: []corev1.EnvFromSource{{
 							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{

@@ -1,0 +1,37 @@
+<html lang="en">
+<head>
+    <title>Freyr Docket</title>
+    <style>
+    </style>
+</head>
+<body>
+<h1>Freyr Docket</h1>
+<div>
+    <div><strong>Spec:</strong> {{.Spec.Mode}}</div>
+    {{ if eq .Spec.Mode "trig" }}
+    <pre><code>{{.Trig}}</code></pre>
+    {{end}}
+</div>
+<div>
+    <div>
+        <strong>Conscripts:</strong>
+        <ul>
+            <li><strong>Target: </strong> {{ .Target }}</li>
+            <li><strong>Actual: </strong> {{ .Actual }}</li>
+        </ul>
+    </div>
+    <ul>
+        {{range .Conscripts}}
+        {{ range $key, $value := .Conscripts }}
+        <li><strong>{{ $key }}</strong>: {{ $value }}</li>
+        {{ end }}
+        {{end}}
+    </ul>
+</div>
+</body>
+<script>
+    setTimeout(function () {
+        window.location.reload();
+    }, 1000);
+</script>
+</html>

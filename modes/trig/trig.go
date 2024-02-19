@@ -22,7 +22,17 @@ func makeCanvas(cols, rows int) [][]string {
 	return matrix
 }
 
-func RenderValues(a Args) string {
+func GetValue(a Args) (float64, error) {
+	angle, err := calculateAngle(a)
+	if err != nil {
+		return 0, err
+	}
+
+	t := translate(angle, -1, 1, float64(a.Min), float64(a.Max))
+	return t, nil
+}
+
+func RenderChart(a Args) string {
 	duration, err := time.ParseDuration(a.Duration)
 	if err != nil {
 		return "could not render chart"
@@ -63,8 +73,7 @@ func RenderValues(a Args) string {
 	for row := range canvas {
 		for col := range canvas[row] {
 			if col < canvasAxisOffset {
-				currentTransNode := canvasHeight - row
-				nodeY := int(translate(float64(currentTransNode), 0, float64(canvasHeight-1), float64(a.Min), float64(a.Max))) - 1
+				nodeY := int(translate(float64(row), 0, float64(canvasHeight-1), float64(a.Min), float64(a.Max))) - 1
 				canvas[row][col] = fmt.Sprintf("%-*d", canvasAxisPadding, nodeY)
 				continue
 			}
@@ -94,16 +103,16 @@ func RenderValues(a Args) string {
 
 	// Print the canvas
 	var output string
-	for y := range canvas {
-		for x := range canvas[y] {
-			output += fmt.Sprintf(canvas[y][x])
+	for yI := len(canvas) - 1; yI >= 0; yI-- {
+		for x := range canvas[yI] {
+			output += fmt.Sprintf(canvas[yI][x])
 		}
 		output += fmt.Sprintf("\n")
 	}
 	return output
 }
 
-func GetValue(a Args) (float64, error) {
+func calculateAngle(a Args) (float64, error) {
 	d, err := time.ParseDuration(a.Duration)
 	if err != nil {
 		return 0, err

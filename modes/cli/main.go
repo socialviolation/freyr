@@ -21,7 +21,7 @@ func testWeather() {
 }
 
 func testTrig() {
-	res := trig.RenderValues(trig.Args{
+	res := trig.RenderChart(trig.Args{
 		Duration: "120s",
 		Min:      5,
 		Max:      20,
