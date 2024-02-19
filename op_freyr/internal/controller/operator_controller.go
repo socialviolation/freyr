@@ -258,6 +258,7 @@ func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator, con
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5001,
 						}},
+						ImagePullPolicy: corev1.PullAlways,
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("100m"),
