@@ -69,14 +69,15 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", freyrOp.Namespace)
+	opJson, err := json.Marshal(freyrOp.Spec)
+	if err != nil {
+		log.Error(err, "Failed to marshal Operator spec")
+		return ctrl.Result{}, err
+	}
+
 	configMap := &corev1.ConfigMap{}
 	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: freyrOp.Namespace}, configMap)
 	if err != nil && errors.IsNotFound(err) {
-		opJson, err := json.Marshal(freyrOp.Spec)
-		if err != nil {
-			log.Error(err, "Failed to marshal Operator spec")
-			return ctrl.Result{}, err
-		}
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "config",
@@ -87,15 +88,15 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 				"OPERATOR_CONFIG": string(opJson),
 			},
 		}
-		err = r.Create(ctx, cm)
+		err = ctrl.SetControllerReference(freyrOp, configMap, r.Scheme)
 		if err != nil {
-			log.Error(err, "Failed to create new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
+			log.Error(err, "Failed to set controller reference")
 			return ctrl.Result{}, err
 		}
 
-		err = ctrl.SetControllerReference(freyrOp, configMap, r.Scheme)
+		err = r.Create(ctx, cm)
 		if err != nil {
-			log.Error(err, "Failed to register Operator config map")
+			log.Error(err, "Failed to create new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
@@ -165,6 +166,25 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	if configMap.Data["CAPTAIN_URL"] != captainUrl || configMap.Data["OPERATOR_CONFIG"] != string(opJson) {
+		log.Info("Updating ConfigMap")
+		configMap.Data["CAPTAIN_URL"] = captainUrl
+		configMap.Data["OPERATOR_CONFIG"] = string(opJson)
+		err = r.Update(ctx, configMap)
+		if err != nil {
+			log.Error(err, "Failed to update ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+			return ctrl.Result{}, err
+		}
+
+		if captainDep.Spec.Template.ObjectMeta.Annotations == nil {
+			captainDep.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+		}
+
+		captainDep.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+		err = r.Update(ctx, captainDep)
+		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+	}
+
 	if *captainDep.Spec.Replicas != 1 {
 		rep := int32(1)
 		captainDep.Spec.Replicas = &rep
@@ -174,7 +194,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+		return ctrl.Result{}, nil
 	}
 
 	targetConscripts := int32(1)
@@ -202,8 +222,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		} else {
 			targetConscripts = int32(fv)
 		}
-		log.Info("Reconciling Trig mode", "conscripts", targetConscripts, "duration", freyrOp.Spec.Trig.Duration, "min", freyrOp.Spec.Trig.Min, "max", freyrOp.Spec.Trig.Max)
-		//log.Info(trig.RenderChart(args))
+		log.Info("Reconciling Trig mode", "target", targetConscripts, "actual", conscriptDep.Spec.Replicas, "duration", freyrOp.Spec.Trig.Duration, "min", freyrOp.Spec.Trig.Min, "max", freyrOp.Spec.Trig.Max)
 	}
 
 	if *conscriptDep.Spec.Replicas != targetConscripts {
@@ -214,7 +233,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -226,6 +245,7 @@ func (r *OperatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&freyrv1alpha1.Operator{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }
 
@@ -282,6 +302,7 @@ func (r *OperatorReconciler) deploymentForCaptain(c *freyrv1alpha1.Operator, con
 	if err != nil {
 		return nil
 	}
+
 	return dep
 }
 

@@ -11,7 +11,7 @@ metadata:
 spec:
   mode: trig
   trig:
-    duration: 120s
+    duration: 300s
     min: 2
     max: 18
 #  mode: weather

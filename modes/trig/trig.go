@@ -128,12 +128,11 @@ func calculateAngle(a Args) (float64, error) {
 }
 
 func getStart(d time.Duration) (time.Time, int) {
-	now := time.Now()
-	s := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-
-	elapsed := now.Sub(s)
-	numDurations := int(elapsed / d)
-	mostRecentIncrement := s.Add(time.Duration(numDurations) * d)
+	now := time.Now().UTC()
+	elapsedSeconds := int(now.Unix() % 86400)
+	startOfDay := now.Add(-time.Duration(elapsedSeconds) * time.Second)
+	numDurations := int(elapsedSeconds) / int(d.Seconds())
+	mostRecentIncrement := startOfDay.Add(time.Duration(numDurations) * d)
 	secondsSinceIncrement := int(now.Sub(mostRecentIncrement).Seconds())
 	return mostRecentIncrement, secondsSinceIncrement
 }

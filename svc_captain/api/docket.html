@@ -21,11 +21,9 @@
         </ul>
     </div>
     <ul>
-        {{range .Conscripts}}
         {{ range $key, $value := .Conscripts }}
         <li><strong>{{ $key }}</strong>: {{ $value }}</li>
         {{ end }}
-        {{end}}
     </ul>
 </div>
 </body>
