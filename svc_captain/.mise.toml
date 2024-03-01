@@ -1,0 +1,27 @@
+[tools]
+go = "1.22.0"
+
+[settings]
+experimental = true
+not_found_auto_install = true
+
+[tasks.build]
+description = '🐳 Building Docker Image'
+dir = ".."
+run = """
+#!/usr/bin/env bash
+echo "🐳 Building Docker Image"
+docker build -t freyr/captain -f svc_captain/Dockerfile .
+"""
+alias = 'b'
+
+[tasks.push]
+description = '🐳 Pushing Docker Image'
+dir = ".."
+run = """
+#!/usr/bin/env bash
+echo "🐳 Pushing Docker Image"
+docker tag freyr/captain australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest
+docker push australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest
+"""
+alias = 'p'

@@ -1,6 +1,6 @@
 # Freyr
 
-Freyr is an example golang Kubernetes Operator using operator-sdk.
+Freyr is an example Go Kubernetes Operator using operator-sdk.
 
 ```shell
 # https://sdk.operatorframework.io/docs/building-operators/golang/tutorial/
@@ -10,7 +10,6 @@ operator-sdk init --domain=freyr.fmtl.au --owner=nick@fmtl.au --project-name op-
 
 operator-sdk create api --group freyr --version v1alpha1 --kind Operator --resource --controller
 ```
-
 
 ## Resources:
 * [Operator SDK Go](https://docs.okd.io/latest/operators/operator_sdk/golang/osdk-golang-tutorial.html#osdk-run-operator_osdk-golang-tutorial)

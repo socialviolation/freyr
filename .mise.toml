@@ -1,0 +1,19 @@
+[tools]
+go = "1.22.0"
+
+[settings]
+experimental = true
+not_found_auto_install = true
+
+[tasks.deck_build]
+description = 'Build the DECK 🎥'
+alias = "db"
+dir = "deck"
+sources = ['deck.md', 'assets/*']
+run = "npx @marp-team/marp-cli@latest deck.md;"
+
+[tasks.deck_open]
+description = 'Open the DECK 🎥'
+alias = "do"
+dir = "deck"
+run = "open deck.html"
