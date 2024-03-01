@@ -21,18 +21,19 @@ paginate: true
 <!-- It all starts with a simple deployment. -->
 
 ---
+# Freyr
 
-# mise en scène
+> Freyr is the Norse God of a few things, but today he is the god of _fair weather_
 
+<!-- Today I will be explaining the principles and demos using a little test app I quickly built -->
 
-![Lets Just say](./assets/lets-say.png)
+---
+# Freyr
 
-<!-- So you are developing a service to run on K8s. -->
-<!-- 
-Lets say that you have a basic microservice, that needs to talk to a database, caches some stuff 
-(from third party maybe, or session tokens, something right?)
--->
+![freyr-basic](./assets/basic-apply.png)
 
+<!-- Explain basics of Freyr application, and it's deployment requirements -->
+<!-- How could an operator help an application like this? -->
 ---
 
 
@@ -111,7 +112,7 @@ spec:
 - ❌ DRY
 - ❌ Not automated
 
-<!-- Not talking about CD, talking about reactiveness to changes -->
+<!-- Not talking about CD, talking about reactiveness to changes, different environments etc -->
 
 ---
 
@@ -119,8 +120,8 @@ spec:
 
 <style scoped>
 img {
-  width: 500px;
-  height: auto;
+  width: auto;
+  height: 80%;
 }
 </style>
 ![kustomize](./assets/kustomize.png)
@@ -159,10 +160,40 @@ img {
 ---
 
 ![Played Yourself](./assets/khaled.gif)
+<!--
+This is a little bit dramatic, but if you had to develop your own helm charts, damn son.
+Helm has its own learning curve, you now have another immensly complicated thing to run, version, package, 
+release. fix, maintain, when all you wanted was to just fire and forget (you can still go back to your yaml manifests)
+-->
+---
+
+![Better Way](./assets/betterway.jpg)
 
 ---
 
-![Better Wat](./assets/betterway.jpg)
+### ...
+
+---
+
+### OPERATORS!
+
+---
+
+## What is an operator
+
+> Conceptually, an Operator takes human operational knowledge and encodes it into software 
+> that is more easily packaged and shared with consumers.
+
+<!-- 
+Think of an Operator as an extension of the software vendor’s engineering team that watches over your 
+Kubernetes environment and uses its current state to make decisions in milliseconds. 
+
+Operators follow a maturity model that ranges from basic functionality to having specific logic for 
+an application. 
+
+Advanced Operators are designed to handle upgrades seamlessly, react to failures automatically, 
+and not take shortcuts, like skipping a software backup process to save time.
+-->
 
 ---
 
@@ -170,4 +201,81 @@ img {
 
 ![operator sdk](./assets/operator-sdk.png)
 
+<!-- Operator SDK is a frame work that uses controller-runtime (k8s) library to make writing operators easier -->
+
 ---
+
+## What does op sdk do?
+
+```
+The Operator SDK is a framework that uses the controller-runtime library to make writing operators easier by providing:
+
+* High level APIs and abstractions to write the operational logic more intuitively
+* Tools for scaffolding and code generation to bootstrap a new project fast
+* Extensions to cover common operator use cases
+
+<!-- We will only be discussing the Go operators -->
+ 
+```
+
+---
+## What Level are you (bro)?
+<style scoped>
+img {
+  width: 90%;
+  height: auto;
+}
+</style>
+![levels](./assets/operator-capability-level.png)
+
+<!-- so where does an operator sit on the scale -->
+<!-- Speak to the levels -->
+
+--- 
+## The workflow
+
+* Create a new operator project using the SDK Command Line Interface(CLI)
+* Define new resource APIs by adding Custom Resource Definitions(CRD)
+* Define Controllers to watch and reconcile resources
+* Write the **reconciling logic** for your Controller using the SDK and controller-runtime APIs
+* Use the SDK CLI to build and generate the operator deployment manifests
+
+<!-- Reconcile Loop here is where all of your code lives -->
+
+--- 
+
+# Back to Freyr
+
+![freyr-basic](./assets/basic-apply.png)
+
+<!-- How could an operator help an application like this? -->
+<!-- Does it need to? of course not, it is my own contrived example, and I thought it would be funny -->
+
+---
+
+## Installation
+
+```bash
+TODO: PUT IN SCRIPT
+```
+
+![freyr-installed](./assets/operator-installed.png)
+
+<!-- well that is not super interesting -->
+---
+
+# Freyr™ ENHANCED
+
+![freyr-advanced](./assets/operator-mode.png)
+
+---
+
+# Dive through the code
+
+--- 
+
+# Demo
+
+---
+
+# Questions? 
