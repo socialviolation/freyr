@@ -4,11 +4,13 @@ class:
   - lead
   - invert
 backgroundColor: #1d1f21
+footer: github.com/socialviolation
+paginate: true
 ---
 
 # K8s Operators
 
-Why
+> Why
 
 <!-- Today, we will be talking about how to build a kubernetes operator -->
 
@@ -115,6 +117,12 @@ spec:
 
 ## Kustomize
 
+<style scoped>
+img {
+  width: 500px;
+  height: auto;
+}
+</style>
 ![kustomize](./assets/kustomize.png)
 
 ---
@@ -134,7 +142,7 @@ spec:
 
 ## HELM
 
-![helm](./assets/helm.png =100x300)
+![helm](./assets/helm.png)
 
 ---
 
@@ -151,5 +159,15 @@ spec:
 ---
 
 ![Played Yourself](./assets/khaled.gif)
+
+---
+
+![Better Wat](./assets/betterway.jpg)
+
+---
+
+# Operator SDK
+
+![operator sdk](./assets/operator-sdk.png)
 
 ---
