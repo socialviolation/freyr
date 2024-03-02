@@ -1,0 +1,37 @@
+[tools]
+go="1.22.0"
+
+
+[tasks.deploy_operator]
+description = 'Deploy the Freyr Operator'
+env={NAMESPACE= 'op-freyr-system', KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
+run = """
+make deploy
+
+kubectl create secret docker-registry gcr-json-key \
+		--docker-server=australia-southeast2-docker.pkg.dev \
+		--docker-username=_json_key \
+		--docker-password="$(cat ${KEYFILE})" \
+		-n ${NAMESPACE}
+kubectl patch -n ${NAMESPACE} serviceaccount op-freyr-controller-manager -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
+
+echo "Waiting for the operator to be ready"
+sleep 5
+POD=$(kubectl get pods -n ${NAMESPACE} -l control-plane=controller-manager -o jsonpath='{.items[0].metadata.name}')
+echo purging ${POD}
+kubectl delete pods -n ${NAMESPACE} -l control-plane=controller-manager
+"""
+
+[tasks.deploy_demo]
+env={NAMESPACE= 'operator-testing', KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
+description = 'Initialize the namespace for testing'
+run = """
+kubectl create namespace ${NAMESPACE}
+kubectl create secret docker-registry gcr-json-key \
+		--docker-server=australia-southeast2-docker.pkg.dev \
+		--docker-username=_json_key \
+		--docker-password="$(cat ${KEYFILE})" \
+		-n ${NAMESPACE}
+kubectl patch -n ${NAMESPACE} serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
+kubectl apply -f ../k8s/freyrv1.yaml
+"""

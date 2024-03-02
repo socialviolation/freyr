@@ -17,16 +17,3 @@ description = 'Open the DECK 🎥'
 alias = "do"
 dir = "deck"
 run = "open deck.html"
-
-[tasks.init_cluster]
-description = 'Initialize the Kubernetes Cluster'
-run = """
-#kubectl create namespace operator-testing
-kubectl create secret docker-registry gcr-json-key \
-		--docker-server=australia-southeast2-docker.pkg.dev \
-		--docker-username=_json_key \
-		--docker-password="$(cat secrets/freyr-operator-b9bde5075a35.json)" \
-		-n op-freyr-system
-kubectl patch -n op-freyr-system serviceaccount op-freyr-controller-manager -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
-kubectl patch -n default serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
-"""

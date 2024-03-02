@@ -46,6 +46,7 @@ type OperatorReconciler struct {
 //+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=freyr.fmtl.au,resources=operators/finalizers,verbs=update
+//+kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -67,8 +68,9 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		log.Error(err, "Failed to get Freyr")
 		return ctrl.Result{}, err
 	}
+	log.Info("Reconciling Freyr", "Name", freyrOp.Name, "Namespace", freyrOp.Namespace)
 
-	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", freyrOp.Namespace)
+	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", req.Namespace)
 	opJson, err := json.Marshal(freyrOp.Spec)
 	if err != nil {
 		log.Error(err, "Failed to marshal Operator spec")
@@ -76,12 +78,12 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	configMap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: freyrOp.Namespace}, configMap)
+	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: req.Namespace}, configMap)
 	if err != nil && errors.IsNotFound(err) {
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "config",
-				Namespace: freyrOp.Namespace,
+				Namespace: req.Namespace,
 			},
 			Data: map[string]string{
 				"CAPTAIN_URL":     captainUrl,
@@ -104,7 +106,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Check if the deployment already exists, if not create a new one
 	captainDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: freyrOp.Namespace}, captainDep)
+	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: req.Namespace}, captainDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForCaptain(freyrOp, configMap)
@@ -127,7 +129,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Captain Service
 	captainSvc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain-svc", Namespace: freyrOp.Namespace}, captainSvc)
+	err = r.Get(ctx, types.NamespacedName{Name: "captain-svc", Namespace: req.Namespace}, captainSvc)
 	if err != nil && errors.IsNotFound(err) {
 		svc := r.serviceForCaptain(freyrOp, captainDep)
 		log.Info("Creating a new Captain Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
@@ -145,7 +147,7 @@ func (r *OperatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Conscript
 	conscriptDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "conscript", Namespace: freyrOp.Namespace}, conscriptDep)
+	err = r.Get(ctx, types.NamespacedName{Name: "conscript", Namespace: req.Namespace}, conscriptDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForConscript(freyrOp, captainSvc)

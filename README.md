@@ -21,8 +21,3 @@ operator-sdk create api --group freyr --version v1alpha1 --kind Operator --resou
 * [ ] captain - read in config, and pub the spec to response
 * [ ] improve docs
 * [ ] tf automation
-
-
-- apiGroups: [ "" ]
-  resources: [ "*" ]
-  verbs: [ "get", "list", "watch", "create", "update", "patch" ]
