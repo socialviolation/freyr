@@ -4,7 +4,7 @@ class:
   - lead
   - invert
 backgroundColor: #1d1f21
-footer: github.com/socialviolation
+#footer: github.com/socialviolation
 paginate: true
 ---
 
@@ -23,10 +23,16 @@ paginate: true
 ---
 # Freyr
 
-> Freyr is the Norse God of a few things, but today he is the god of _fair weather_
+> Freyr an Old Norse God, associated with kingship, fertility, peace, prosperity, **fair weather**, and good harvest.
 
-<!-- Today I will be explaining the principles and demos using a little test app I quickly built -->
+![freyr](./assets/freyr.webp)
 
+<style scoped>
+img {
+  width: auto;
+  height: 400px;
+}
+</style>
 ---
 # Freyr
 
@@ -121,7 +127,7 @@ spec:
 <style scoped>
 img {
   width: auto;
-  height: 80%;
+  height: 400px;
 }
 </style>
 ![kustomize](./assets/kustomize.png)
@@ -207,7 +213,6 @@ and not take shortcuts, like skipping a software backup process to save time.
 
 ## What does op sdk do?
 
-```
 The Operator SDK is a framework that uses the controller-runtime library to make writing operators easier by providing:
 
 * High level APIs and abstractions to write the operational logic more intuitively
@@ -215,8 +220,6 @@ The Operator SDK is a framework that uses the controller-runtime library to make
 * Extensions to cover common operator use cases
 
 <!-- We will only be discussing the Go operators -->
- 
-```
 
 ---
 ## What Level are you (bro)?
@@ -249,23 +252,36 @@ img {
 ![freyr-basic](./assets/basic-apply.png)
 
 <!-- How could an operator help an application like this? -->
-<!-- Does it need to? of course not, it is my own contrived example, and I thought it would be funny -->
+<!-- Does it need to? of course not, it is my contrived example, and I thought it would be funny -->
 
 ---
 
 ## Installation
 
 ```bash
-TODO: PUT IN SCRIPT
+# Install the CRDs
+make install
+
+# Deploy the operator
+make deploy
 ```
+
+---
+
+## Installation
 
 ![freyr-installed](./assets/operator-installed.png)
 
 <!-- well that is not super interesting -->
 ---
 
-# Freyr™ ENHANCED
 
+<style scoped>
+img {
+  width: auto;
+  height: 600px;
+}
+</style>
 ![freyr-advanced](./assets/operator-mode.png)
 
 ---
