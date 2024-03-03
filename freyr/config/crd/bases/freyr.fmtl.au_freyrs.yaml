@@ -12,7 +12,7 @@ spec:
     listKind: FreyrList
     plural: freyrs
     singular: freyr
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

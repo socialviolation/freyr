@@ -7,6 +7,10 @@ metadata:
     app.kubernetes.io/part-of: freyr
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: freyr
-  name: freyr-sample
+  name: freyr-demo
 spec:
-  # TODO(user): Add fields here
+  mode: trig
+  trig:
+    duration: 300s
+    min: 2
+    max: 18

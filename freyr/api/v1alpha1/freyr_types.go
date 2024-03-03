@@ -59,6 +59,7 @@ type FreyrStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Freyr is the Schema for the operators API
 type Freyr struct {
@@ -70,6 +71,7 @@ type Freyr struct {
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:resource:scope=Cluster
 
 // FreyrList contains a list of Freyr
 type FreyrList struct {

@@ -63,12 +63,19 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// check if the Freyr exists
 	freyrOp := &freyrv1alpha1.Freyr{}
+	ns := req.Namespace
+	if ns == "" {
+		ns = "default"
+		req.Namespace = "default"
+		req.NamespacedName = types.NamespacedName{
+			Name:      req.Name,
+			Namespace: "default",
+		}
+	}
+
 	err := r.Get(ctx, req.NamespacedName, freyrOp)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not captainDep, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			log.Info("Freyr resource not deployed. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
@@ -76,9 +83,9 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Failed to get Freyr")
 		return ctrl.Result{}, err
 	}
-	log.Info("Reconciling Freyr", "Name", freyrOp.Name, "Namespace", freyrOp.Namespace)
+	log.Info("Reconciling Freyr", "Name", freyrOp.Name, "Namespace", ns)
 
-	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", req.Namespace)
+	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", ns)
 	opJson, err := json.Marshal(freyrOp.Spec)
 	if err != nil {
 		log.Error(err, "Failed to marshal Freyr spec")
@@ -86,7 +93,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	configMap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: req.Namespace}, configMap)
+	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: ns}, configMap)
 	if err != nil && errors.IsNotFound(err) {
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -109,12 +116,13 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			log.Error(err, "Failed to create new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+		log.Info("Creating a new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
+		return ctrl.Result{}, nil
 	}
 
 	// Check if the deployment already exists, if not create a new one
 	captainDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: req.Namespace}, captainDep)
+	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: ns}, captainDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForCaptain(freyrOp, configMap)
@@ -128,7 +136,6 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 			return ctrl.Result{}, err
 		}
-		// Deployment created successfully - return and requeue
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Captain Deployment")
@@ -137,7 +144,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// Captain Service
 	captainSvc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain-svc", Namespace: req.Namespace}, captainSvc)
+	err = r.Get(ctx, types.NamespacedName{Name: "captain-svc", Namespace: ns}, captainSvc)
 	if err != nil && errors.IsNotFound(err) {
 		svc := r.serviceForCaptain(freyrOp, captainDep)
 		log.Info("Creating a new Captain Service", "Service.Namespace", svc.Namespace, "Service.Name", svc.Name)
@@ -155,7 +162,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// Conscript
 	conscriptDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "conscript", Namespace: req.Namespace}, conscriptDep)
+	err = r.Get(ctx, types.NamespacedName{Name: "conscript", Namespace: ns}, conscriptDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForConscript(freyrOp, captainSvc)
@@ -170,7 +177,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Conscript Deployment")
 		return ctrl.Result{}, err
@@ -192,7 +199,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 		captainDep.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 		err = r.Update(ctx, captainDep)
-		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+		return ctrl.Result{}, nil
 	}
 
 	if *captainDep.Spec.Replicas != 1 {
@@ -270,7 +277,7 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "captain",
-			Namespace: c.Namespace,
+			Namespace: config.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -320,7 +327,7 @@ func (r *FreyrReconciler) serviceForCaptain(c *freyrv1alpha1.Freyr, d *appsv1.De
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "captain-svc",
-			Namespace: c.Namespace,
+			Namespace: d.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: labelsForCaptain(),
@@ -355,7 +362,7 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "conscript",
-			Namespace: c.Namespace,
+			Namespace: svc.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
