@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -136,7 +137,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Captain Deployment")
 		return ctrl.Result{}, err
@@ -154,7 +155,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
-		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		return ctrl.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Service")
 		return ctrl.Result{}, err
@@ -258,11 +259,16 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *FreyrReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	b := false
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&freyrv1alpha1.Freyr{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1,
+			NeedLeaderElection:      &b,
+		}).
 		Complete(r)
 }
 

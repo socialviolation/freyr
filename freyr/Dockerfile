@@ -6,12 +6,12 @@ ARG TARGETARCH
 WORKDIR /workspace/modes
 COPY modes .
 
-WORKDIR /workspace/op_freyr
-COPY op_freyr/go.mod op_freyr/go.sum op_freyr/go.work op_freyr/go.work.sum ./
+WORKDIR /workspace/freyr
+COPY freyr/go.mod freyr/go.sum freyr/go.work freyr/go.work.sum ./
 RUN go work use
 RUN go mod download
 RUN go mod verify
-COPY op_freyr/ .
+COPY freyr/ .
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/op_freyr/manager .
+COPY --from=builder /workspace/freyr/manager .
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
