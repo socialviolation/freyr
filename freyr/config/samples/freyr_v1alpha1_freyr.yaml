@@ -1,0 +1,12 @@
+apiVersion: freyr.fmtl.au/v1alpha1
+kind: Freyr
+metadata:
+  labels:
+    app.kubernetes.io/name: freyr
+    app.kubernetes.io/instance: freyr-sample
+    app.kubernetes.io/part-of: freyr
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: freyr
+  name: freyr-sample
+spec:
+  # TODO(user): Add fields here

@@ -6,9 +6,9 @@ Freyr is an example Go Kubernetes Operator using operator-sdk.
 # https://sdk.operatorframework.io/docs/building-operators/golang/tutorial/
 cd op_freyr
 
-operator-sdk init --domain=freyr.fmtl.au --owner=nick@fmtl.au --project-name op-freyr
+operator-sdk init --domain=fmtl.au --owner=nick@fmtl.au --project-name freyr;
 
-operator-sdk create api --group freyr --version v1alpha1 --kind Operator --resource --controller
+operator-sdk create api --group freyr --version v1alpha1 --kind Freyr --resource --controller --namespaced=false 
 ```
 
 ## Resources:
@@ -21,3 +21,7 @@ operator-sdk create api --group freyr --version v1alpha1 --kind Operator --resou
 * [ ] captain - read in config, and pub the spec to response
 * [ ] improve docs
 * [ ] tf automation
+
+
+
+``````

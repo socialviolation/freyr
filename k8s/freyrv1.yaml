@@ -1,10 +1,6 @@
 apiVersion: freyr.fmtl.au/v1alpha1
-kind: Operator
+kind: Freyr
 metadata:
-  labels:
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/instance: demo
-    app.kubernetes.io/part-of: op-freyr
   name: demo
 spec:
   mode: trig
@@ -12,8 +8,3 @@ spec:
     duration: 300s
     min: 2
     max: 18
-#  mode: weather
-#  weather:
-#    country: "AU"
-#    city: "Melbourne"
-#    apiKey: "xxx"
