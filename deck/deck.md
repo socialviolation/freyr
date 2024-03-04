@@ -43,18 +43,14 @@ img {
 ![freyr-basic](./assets/basic-apply.png)
 
 <!-- Explain basics of Freyr application, and it's deployment requirements -->
-<!-- How could an operator help an application like this? -->
+
 ---
 
 
 ### How it starts
 
 ```yaml
-# two of these probably
-apiVersion: apps/v1
-kind: StatefulSet 
-...
----
+# x2 of these
 apiVersion: apps/v1
 kind: Deployment
 ...
@@ -278,9 +274,7 @@ make manifests
 ### Installation
 
 ```bash
-# Install the CRDs
-make install
-# Deploy the operator
+# Install the CRDs & Deploy the operator
 make deploy
 ```
 <style scoped>
@@ -325,6 +319,14 @@ img {
 }
 </style>
 ![freyr-advanced](./assets/op_applied.png)
+
+<!-- 
+For the demo today, we are going to be scaling based on a sine wave generator, to get a really nice quick scaling demo.
+
+As you can tell though, you would easily be able to scale based on any business or technical requirements you can think of.
+No longer are you limited to scaling based on usage. You can now easily scale based on Active Users, resource usage, some metrics, 
+lunar cycles, or because your morning horoscope told you "you need to find your authentic voice".
+-->
 
 ---
 
