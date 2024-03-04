@@ -1,10 +1,10 @@
 [tools]
-go="1.22.0"
+go = "1.22.0"
 
 
 [tasks.deploy_operator]
 description = 'Deploy the Freyr Operator'
-env={NAMESPACE= 'op-freyr-system', KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
+env={NAMESPACE= 'freyr-system', KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
 run = """
 make deploy
 
@@ -13,7 +13,7 @@ kubectl create secret docker-registry gcr-json-key \
 		--docker-username=_json_key \
 		--docker-password="$(cat ${KEYFILE})" \
 		-n ${NAMESPACE}
-kubectl patch -n ${NAMESPACE} serviceaccount op-freyr-controller-manager -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
+kubectl patch -n ${NAMESPACE} serviceaccount freyr-controller-manager -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
 
 echo "Waiting for the operator to be ready"
 sleep 5

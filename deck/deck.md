@@ -18,10 +18,14 @@ paginate: true
 
 ![screenshot](./assets/operatorvsapply.png)
 
-<!-- It all starts with a simple deployment. -->
+<!--
+This is your last chance. After this, there is no turning back. 
+You take the blue pill - the story ends, you wake up in your bed and believe whatever you want to believe. 
+You take the red pill - you stay in Wonderland and I show you how deep the rabbit hole goes.
+-->
 
 ---
-# Freyr
+### Freyr
 
 > Freyr an Old Norse God, associated with kingship, fertility, peace, prosperity, **fair weather**, and good harvest.
 
@@ -34,7 +38,7 @@ img {
 }
 </style>
 ---
-# Freyr
+### Freyr
 
 ![freyr-basic](./assets/basic-apply.png)
 
@@ -43,7 +47,7 @@ img {
 ---
 
 
-## How it starts
+### How it starts
 
 ```yaml
 # two of these probably
@@ -106,23 +110,26 @@ spec:
 
 ---
 
-# What's wrong here?
+### What's wrong here?
 
 - ✅ Nothing at all. Have fun. 
 
 ---
 
-# What's wrong here?
+### What's wrong here?
 
+- ✅ Native
 - ✅ Declarative
+- ❌ VERBOSE
 - ❌ DRY
 - ❌ Not automated
+- ❌ Non Reactive
 
 <!-- Not talking about CD, talking about reactiveness to changes, different environments etc -->
 
 ---
 
-## Kustomize
+### Kustomize
 
 <style scoped>
 img {
@@ -134,7 +141,7 @@ img {
 
 ---
 
-## Kustomize
+### Kustomize
 
 - ✅ Native
 - ✅ Declarative
@@ -147,13 +154,13 @@ img {
 
 ---
 
-## HELM
+### HELM
 
 ![helm](./assets/helm.png)
 
 ---
 
-## HELM
+### HELM
 
 - ❌ Native
 - ❓ Declarative
@@ -170,6 +177,8 @@ img {
 This is a little bit dramatic, but if you had to develop your own helm charts, damn son.
 Helm has its own learning curve, you now have another immensly complicated thing to run, version, package, 
 release. fix, maintain, when all you wanted was to just fire and forget (you can still go back to your yaml manifests)
+
+And at the end of the day, you still have to actively monitor, and intervene when things go ary
 -->
 ---
 
@@ -185,7 +194,7 @@ release. fix, maintain, when all you wanted was to just fire and forget (you can
 
 ---
 
-## What is an operator
+### What is an operator
 
 > Conceptually, an Operator takes human operational knowledge and encodes it into software 
 > that is more easily packaged and shared with consumers.
@@ -203,15 +212,15 @@ and not take shortcuts, like skipping a software backup process to save time.
 
 ---
 
-# Operator SDK
+### Operator SDK
 
 ![operator sdk](./assets/operator-sdk.png)
 
-<!-- Operator SDK is a frame work that uses controller-runtime (k8s) library to make writing operators easier -->
+<!-- Operator SDK is a framework that uses controller-runtime (k8s) library to make writing operators easier -->
 
 ---
 
-## What does op sdk do?
+### What does it do?
 
 The Operator SDK is a framework that uses the controller-runtime library to make writing operators easier by providing:
 
@@ -222,7 +231,7 @@ The Operator SDK is a framework that uses the controller-runtime library to make
 <!-- We will only be discussing the Go operators -->
 
 ---
-## What Level are you (bro)?
+### What Level are you (bro)?
 <style scoped>
 img {
   width: 90%;
@@ -235,19 +244,29 @@ img {
 <!-- Speak to the levels -->
 
 --- 
-## The workflow
+### The workflow
 
-* Create a new operator project using the SDK Command Line Interface(CLI)
-* Define new resource APIs by adding Custom Resource Definitions(CRD)
+* Create a new operator project using the SDK CLI
+* Define new resource APIs by adding Custom Resource Definitions (CRD)
 * Define Controllers to watch and reconcile resources
 * Write the **reconciling logic** for your Controller using the SDK and controller-runtime APIs
 * Use the SDK CLI to build and generate the operator deployment manifests
 
 <!-- Reconcile Loop here is where all of your code lives -->
 
+---
+
+### Generation
+
+```bash
+# Generate Go related 
+make generate
+make manifests
+```
+
 --- 
 
-# Back to Freyr
+### Back to Freyr
 
 ![freyr-basic](./assets/basic-apply.png)
 
@@ -256,33 +275,56 @@ img {
 
 ---
 
-## Installation
+### Installation
 
 ```bash
 # Install the CRDs
 make install
-
 # Deploy the operator
 make deploy
 ```
+<style scoped>
+img {
+  width: 90%;
+  height: auto;
+}
+</style>
 
----
-
-## Installation
-
-![freyr-installed](./assets/operator-installed.png)
+![freyr-installed](./assets/op_installed.png)
 
 <!-- well that is not super interesting -->
+
 ---
 
+### Deploy
+
+```bash
+kubectl apply -f freyr-v1.yaml
+```
+
+```yaml title="yaml"
+apiVersion: freyr.fmtl.au/v1alpha1
+kind: Freyr
+metadata:
+  name: freyr-demo
+spec:
+  mode: trig
+  trig:
+    duration: 300s
+    min: 2
+    max: 18
+
+```
+---
 
 <style scoped>
 img {
   width: auto;
-  height: 600px;
+  height: 90%;
+  margin-top: 20px;
 }
 </style>
-![freyr-advanced](./assets/operator-mode.png)
+![freyr-advanced](./assets/op_applied.png)
 
 ---
 
