@@ -1,6 +1,8 @@
 [tools]
 go = "1.22.0"
 
+[env]
+NAMESPACE="default"
 
 [tasks.deploy_operator]
 description = 'Deploy the Freyr Operator'
@@ -23,7 +25,7 @@ kubectl delete pods -n ${NAMESPACE} -l control-plane=controller-manager
 """
 
 [tasks.namespace_setup]
-env={NAMESPACE= 'default', KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
+env={KEYFILE= '../secrets/freyr-operator-b9bde5075a35.json'}
 description = 'Initialize the namespace for testing'
 run = """
 kubectl create namespace ${NAMESPACE}
@@ -36,24 +38,17 @@ kubectl patch -n ${NAMESPACE} serviceaccount default -p '{"imagePullSecrets": [{
 kubens ${NAMESPACE}
 """
 
-[tasks.namespace_destroy]
-env={NAMESPACE= 'operator-testing'}
-description = 'Initialize the namespace for testing'
-run = """
-kubectl delete namespace ${NAMESPACE}
-kubens default
-"""
-
 [tasks.demo_deploy]
-env={NAMESPACE= 'default'}
 description = 'Deploy Demo'
 run = """
 kubectl -n ${NAMESPACE} apply -k config/samples
 """
 
 [tasks.demo_destroy]
-env={NAMESPACE= 'default'}
 description = 'Deploy Demo'
 run = """
 kubectl -n ${NAMESPACE}  delete -k config/samples
 """
+
+[tasks.pf]
+run="kubectl port-forward -n ${NAMESPACE} deployments/captain 5001:5001"
