@@ -3,7 +3,8 @@ package api
 import (
 	_ "embed"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/socialviolation/freyr/modes"
 	"github.com/socialviolation/freyr/modes/trig"
@@ -17,6 +18,10 @@ type Conscript struct {
 	IP       string    `json:"ip"`
 	LastSeen time.Time `json:"last_seen"`
 }
+
+const (
+	ContentTypeHTML = "text/html; charset=utf-8"
+)
 
 type CaptainController struct {
 	cycleStaleDuration time.Duration
@@ -34,8 +39,7 @@ func NewCaptainController() (*CaptainController, error) {
 	spec := modes.OperatorSpec{}
 	err := json.Unmarshal([]byte(spe), &spec)
 	if err != nil {
-		log.Error().Err(err).Msg("error unmarshalling operator spec")
-		return nil, err
+		return nil, fmt.Errorf("error unmarshalling operator config")
 	}
 	log.Info().Msgf("operator spec: %+v", spec)
 
@@ -47,19 +51,20 @@ func NewCaptainController() (*CaptainController, error) {
 	}, nil
 }
 
-func (c *CaptainController) Serve(r chi.Router, middlewares ...func(http.Handler) http.Handler) {
+func (c *CaptainController) Serve(r *gin.Engine, middlewares ...gin.HandlerFunc) {
 	r.Use(middlewares...)
-	r.Get("/", c.docketHtml)
-	r.Get("/enlist", c.enlist)
-	r.Get("/conscripts", c.docket)
+
+	r.GET("/", c.docketHtml)
+	r.GET("/enlist", c.enlist)
+	r.GET("/conscripts", c.docket)
 
 	c.schedulePurger()
 }
 
-func (c *CaptainController) enlist(w http.ResponseWriter, r *http.Request) {
-	log.Info().Msgf("enlisting %s", r.RemoteAddr)
-	c.conscripts[r.RemoteAddr] = Conscript{
-		IP:       r.RemoteAddr,
+func (c *CaptainController) enlist(ctx *gin.Context) {
+	log.Info().Msgf("enlisting %s", ctx.Request.RemoteAddr)
+	c.conscripts[ctx.Request.RemoteAddr] = Conscript{
+		IP:       ctx.Request.RemoteAddr,
 		LastSeen: time.Now(),
 	}
 }
@@ -72,13 +77,20 @@ type docketResponse struct {
 	Actual     int                  `json:"actual"`
 }
 
-func (c *CaptainController) docket(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+type errorResponse struct {
+	Message string
+}
+
+func (c *CaptainController) docket(ctx *gin.Context) {
 	target, err := trig.GetValue(trig.Args{
 		Min:      c.opSpec.Trig.Min,
 		Max:      c.opSpec.Trig.Max,
 		Duration: c.opSpec.Trig.Duration,
 	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse{Message: "error calculating the target conscripts"})
+	}
+
 	dr := docketResponse{
 		Spec:       c.opSpec,
 		Target:     int(target),
@@ -89,13 +101,10 @@ func (c *CaptainController) docket(w http.ResponseWriter, r *http.Request) {
 	for k, v := range c.conscripts {
 		dr.Conscripts[k] = v.LastSeen
 	}
-	err = json.NewEncoder(w).Encode(dr)
-	if err != nil {
-		log.Error().Err(err).Msg("error encoding conscripts")
-	}
+	ctx.JSON(http.StatusOK, dr)
 }
 
-func (c *CaptainController) docketHtml(w http.ResponseWriter, r *http.Request) {
+func (c *CaptainController) docketHtml(ctx *gin.Context) {
 	dr := docketResponse{
 		Spec:       c.opSpec,
 		Actual:     len(c.conscripts),
@@ -116,10 +125,7 @@ func (c *CaptainController) docketHtml(w http.ResponseWriter, r *http.Request) {
 		dr.Trig = trig.RenderChart(args)
 	}
 
-	err := c.docketTmpl.Execute(w, dr)
-	if err != nil {
-		return
-	}
+	ctx.String(http.StatusOK, ContentTypeHTML, dr)
 }
 
 func (c *CaptainController) schedulePurger() chan bool {

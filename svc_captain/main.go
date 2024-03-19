@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
 	"github.com/socialviolation/freyr/svc_captain/api"
 	"net/http"
 	"os"
@@ -11,23 +11,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
-func setupRoutes() *chi.Mux {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Heartbeat("/ping"))
-
-	cptn, err := api.NewCaptainController()
+func setupRoutes() *gin.Engine {
+	r := gin.Default()
+	captainSvc, err := api.NewCaptainController()
 	if err != nil {
 		log.Error().Err(err).Msg("error creating captain controller")
 		os.Exit(1)
 	}
-	cptn.Serve(r)
+	captainSvc.Serve(r)
 
 	return r
 }
