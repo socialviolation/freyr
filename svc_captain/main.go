@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/socialviolation/freyr/svc_captain/api"
+	"github.com/socialviolation/freyr/svc_captain/middlewares"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,7 +17,11 @@ import (
 )
 
 func setupRoutes() *gin.Engine {
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middlewares.DefaultStructuredLogger())
+
 	captainSvc, err := api.NewCaptainController()
 	if err != nil {
 		log.Error().Err(err).Msg("error creating captain controller")

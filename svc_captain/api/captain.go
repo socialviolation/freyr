@@ -1,13 +1,14 @@
 package api
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"github.com/socialviolation/freyr/modes"
-	"github.com/socialviolation/freyr/modes/trig"
+	"github.com/socialviolation/freyr/shared"
+	"github.com/socialviolation/freyr/shared/trig"
 	"html/template"
 	"net/http"
 	"os"
@@ -19,14 +20,10 @@ type Conscript struct {
 	LastSeen time.Time `json:"last_seen"`
 }
 
-const (
-	ContentTypeHTML = "text/html; charset=utf-8"
-)
-
 type CaptainController struct {
 	cycleStaleDuration time.Duration
 	conscripts         map[string]Conscript
-	opSpec             modes.OperatorSpec
+	opSpec             shared.OperatorSpec
 
 	docketTmpl *template.Template
 }
@@ -36,7 +33,7 @@ var docketTemplate string
 
 func NewCaptainController() (*CaptainController, error) {
 	spe := os.Getenv("OPERATOR_CONFIG")
-	spec := modes.OperatorSpec{}
+	spec := shared.OperatorSpec{}
 	err := json.Unmarshal([]byte(spe), &spec)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling operator config")
@@ -70,7 +67,7 @@ func (c *CaptainController) enlist(ctx *gin.Context) {
 }
 
 type docketResponse struct {
-	Spec       modes.OperatorSpec   `json:"operator,omitempty"`
+	Spec       shared.OperatorSpec  `json:"operator,omitempty"`
 	Conscripts map[string]time.Time `json:"conscripts"`
 	Trig       string               `json:"trig,omitempty"`
 	Target     int                  `json:"target,omitempty"`
@@ -125,7 +122,15 @@ func (c *CaptainController) docketHtml(ctx *gin.Context) {
 		dr.Trig = trig.RenderChart(args)
 	}
 
-	ctx.String(http.StatusOK, ContentTypeHTML, dr)
+	buf := bytes.NewBufferString("")
+	err := c.docketTmpl.Execute(buf, dr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse{Message: fmt.Errorf("error rendering page: %w", err).Error()})
+		return
+	}
+
+	ctx.Writer.WriteHeader(http.StatusOK)
+	ctx.Writer.Write(buf.Bytes())
 }
 
 func (c *CaptainController) schedulePurger() chan bool {

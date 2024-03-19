@@ -1,4 +1,4 @@
-package modes
+package shared
 
 type OperatorSpec struct {
 	Mode    string      `json:"mode,omitempty"`
