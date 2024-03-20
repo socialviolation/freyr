@@ -1,0 +1,68 @@
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+#    network_mode: host
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--enable-feature=otlp-write-receiver'
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+#    network_mode: host
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - LOG_LEVEL=debug
+#      - METRICS_STORAGE_TYPE=prometheus
+#    command:
+#      - "--memory.max-traces=5000"
+#      - "--query.base-path=/jaeger/ui"
+#      - "--prometheus.server-url=http://prometheus:9090"
+#      - "--prometheus.query.normalize-calls=true"
+#      - "--prometheus.query.normalize-duration=true"
+#    depends_on:
+#      - prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+      - jaeger
+
+  otel_collector:
+    image: otel/opentelemetry-collector:0.96.0
+    container_name: otel_collector
+#    network_mode: host
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "9317:4317"
+      - "9318:4318"
+    environment:
+      - LOG_LEVEL=debug
+    volumes:
+      - ./collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    depends_on:
+      - jaeger
+      - prometheus
+
+volumes:
+  prom_data:

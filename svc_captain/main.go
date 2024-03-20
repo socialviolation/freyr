@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/socialviolation/freyr/shared/initotel"
 	"github.com/socialviolation/freyr/svc_captain/api"
 	"github.com/socialviolation/freyr/svc_captain/middlewares"
 	"net/http"
@@ -39,6 +40,8 @@ func main() {
 	viper.SetDefault("host.port", 5001)
 	viper.SetDefault("host.name", "0.0.0.0")
 
+	otelShutdown, err := initotel.NewSDK(context.Background(), "freyr/captain")
+
 	r := setupRoutes()
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", viper.GetString("host.name"), viper.GetInt32("host.port")),
@@ -63,9 +66,15 @@ func main() {
 	<-c
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	err := srv.Shutdown(ctx)
+	err = srv.Shutdown(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("error while shutting down")
+		log.Error().Err(err).Msg("error while shutting down server")
+		os.Exit(1)
+	}
+
+	err = otelShutdown(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("error while shutting down otel")
 		os.Exit(1)
 	}
 

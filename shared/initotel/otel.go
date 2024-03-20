@@ -1,21 +1,21 @@
-package otel
+package initotel
 
 import (
 	"context"
 	"errors"
-	"go.opentelemetry.io/otel/sdk/metric"
-	"time"
-
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 // NewSDK bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
-func NewSDK(ctx context.Context) (func(context.Context) error, error) {
+func NewSDK(ctx context.Context, serviceName string) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 
 	// shutdown calls cleanup functions registered via shutdownFuncs.
@@ -40,7 +40,7 @@ func NewSDK(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetTextMapPropagator(prop)
 
 	// Set up trace provider.
-	tracerProvider, err := traceProvider(ctx)
+	tracerProvider, err := traceProvider(ctx, serviceName)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
@@ -49,7 +49,7 @@ func NewSDK(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetTracerProvider(tracerProvider)
 
 	// Set up meter provider.
-	meterProvider, err := metricProvider(ctx)
+	meterProvider, err := metricProvider(ctx, serviceName)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
@@ -67,26 +67,28 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-func traceProvider(ctx context.Context) (*trace.TracerProvider, error) {
+func traceProvider(ctx context.Context, name string) (*trace.TracerProvider, error) {
 	exp, err := otlptracehttp.New(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	tracerProvider := trace.NewTracerProvider(trace.WithBatcher(exp))
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithBatcher(exp),
+		trace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name))),
+	)
 	return tracerProvider, nil
 }
 
-func metricProvider(ctx context.Context) (*metric.MeterProvider, error) {
-	exp, err := otlpmetrichttp.New(ctx)
+func metricProvider(ctx context.Context, name string) (*metric.MeterProvider, error) {
+	exporter, err := prometheus.New()
 	if err != nil {
 		return nil, err
 	}
 
 	meterProvider := metric.NewMeterProvider(
-		metric.WithReader(metric.NewPeriodicReader(exp,
-			// Default is 1m. Set to 3s for demonstrative purposes.
-			metric.WithInterval(3*time.Second))),
+		metric.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name))),
+		metric.WithReader(exporter),
 	)
 	return meterProvider, nil
 }
