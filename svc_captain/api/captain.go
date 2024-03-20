@@ -7,15 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/rs/zerolog/log"
 	"github.com/socialviolation/freyr/shared"
 	"github.com/socialviolation/freyr/shared/trig"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"html/template"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -32,11 +33,6 @@ type CaptainController struct {
 	opSpec             shared.OperatorSpec
 
 	docketTmpl *template.Template
-
-	// metrics
-	metricTargetConscripts  metric.Int64ObservableGauge
-	metricActualConscripts  metric.Int64ObservableGauge
-	metricUniqueEnlistments metric.Int64Counter
 }
 
 //go:embed docket.html.tmpl
@@ -44,6 +40,12 @@ var docketTemplate string
 var (
 	tracer = otel.GetTracerProvider().Tracer("captain_api")
 	meter  = otel.GetMeterProvider().Meter("captain_api")
+)
+
+const (
+	MetricConscriptsTarget = "captain_conscripts_target"
+	MetricConscriptsActual = "captain_conscripts_actual"
+	MetricConscriptsUnique = "captain_conscripts_unique"
 )
 
 func NewCaptainController() (*CaptainController, error) {
@@ -55,36 +57,51 @@ func NewCaptainController() (*CaptainController, error) {
 	}
 	log.Info().Msgf("operator spec: %+v", spec)
 
-	mtc, err := meter.Int64ObservableGauge("conscripts_target", metric.WithDescription("The desired number of conscripts enlisted"), metric.WithUnit("{conscripts}"))
-	if err != nil {
-		return nil, fmt.Errorf("error initialising metric: conscripts.target: %w", err)
-	}
-	mac, err := meter.Int64ObservableGauge("conscripts_actual", metric.WithDescription("The actual number of conscripts enlisted"), metric.WithUnit("{conscripts}"))
-	if err != nil {
-		return nil, fmt.Errorf("error initialising metric: conscripts.actual: %w", err)
-	}
-	mue, err := meter.Int64Counter("total_enlistments", metric.WithDescription("The total number of unique conscripts"), metric.WithUnit("{conscripts}"))
-
-	return &CaptainController{
+	cc := &CaptainController{
 		cycleStaleDuration: time.Second * 3,
 		conscripts:         make(map[string]Conscript),
 		opSpec:             spec,
 		docketTmpl:         template.Must(template.New("docket").Parse(docketTemplate)),
+	}
 
-		metricTargetConscripts:  mtc,
-		metricActualConscripts:  mac,
-		metricUniqueEnlistments: mue,
-	}, nil
+	return cc, nil
 }
 
-func (c *CaptainController) Serve(r *gin.Engine, middlewares ...gin.HandlerFunc) {
+func (c *CaptainController) Serve(ctx context.Context, r *gin.Engine, middlewares ...gin.HandlerFunc) {
 	r.Use(middlewares...)
 
 	r.GET("/", c.docketHtml)
 	r.GET("/enlist", c.enlist)
 	r.GET("/conscripts", c.docket)
 
-	c.schedulePurger()
+	mtc := ginmetrics.Metric{
+		Type:        ginmetrics.Gauge,
+		Name:        "captain_conscripts_target",
+		Description: "The target number of conscripts",
+		Labels:      []string{},
+	}
+	_ = ginmetrics.GetMonitor().AddMetric(&mtc)
+	mac := ginmetrics.Metric{
+		Type:        ginmetrics.Gauge,
+		Name:        "captain_conscripts_actual",
+		Description: "The actual number of conscripts",
+		Labels:      []string{},
+	}
+	_ = ginmetrics.GetMonitor().AddMetric(&mac)
+	mue := ginmetrics.Metric{
+		Type:        ginmetrics.Counter,
+		Name:        "captain_conscripts_total",
+		Description: "Total number of unique conscripts",
+		Labels:      []string{},
+	}
+	err := ginmetrics.GetMonitor().AddMetric(&mue)
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	_ = ginmetrics.GetMonitor().GetMetric(MetricConscriptsUnique).Add([]string{}, float64(0))
+
+	c.routinePurger(ctx)
+	c.routineMetrics(ctx)
 }
 
 func (c *CaptainController) startTrace(ctx context.Context, name string) (context.Context, trace.Span) {
@@ -95,7 +112,7 @@ func (c *CaptainController) startTrace(ctx context.Context, name string) (contex
 }
 
 func (c *CaptainController) enlist(g *gin.Context) {
-	traceCtx, span := tracer.Start(g.Request.Context(), "enlist")
+	_, span := tracer.Start(g.Request.Context(), "enlist")
 	defer span.End()
 	log.Info().Msgf("enlisting %s", g.Request.RemoteAddr)
 
@@ -106,7 +123,7 @@ func (c *CaptainController) enlist(g *gin.Context) {
 	span.SetAttributes(isNewAttr)
 
 	if !found {
-		c.metricUniqueEnlistments.Add(traceCtx, 1, metric.WithAttributes(ipAttr))
+		_ = ginmetrics.GetMonitor().GetMetric(MetricConscriptsUnique).Inc([]string{})
 	}
 
 	c.conscripts[g.Request.RemoteAddr] = Conscript{
@@ -182,7 +199,7 @@ func (c *CaptainController) docketHtml(ctx *gin.Context) {
 	ctx.Writer.Write(buf.Bytes())
 }
 
-func (c *CaptainController) schedulePurger() chan bool {
+func (c *CaptainController) routinePurger(ctx context.Context) chan bool {
 	stop := make(chan bool)
 
 	go func() {
@@ -198,6 +215,35 @@ func (c *CaptainController) schedulePurger() chan bool {
 			select {
 			case <-time.After(c.cycleStaleDuration):
 			case <-stop:
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return stop
+}
+
+func (c *CaptainController) routineMetrics(ctx context.Context) chan bool {
+	stop := make(chan bool)
+
+	go func() {
+		for {
+			args := trig.Args{
+				Min:      c.opSpec.Trig.Min,
+				Max:      c.opSpec.Trig.Max,
+				Duration: c.opSpec.Trig.Duration,
+			}
+			target, _ := trig.GetValue(args)
+			_ = ginmetrics.GetMonitor().GetMetric(MetricConscriptsTarget).SetGaugeValue([]string{}, math.Floor(target))
+			_ = ginmetrics.GetMonitor().GetMetric(MetricConscriptsActual).SetGaugeValue([]string{}, float64(len(c.conscripts)))
+
+			select {
+			case <-time.After(1 * time.Second):
+			case <-stop:
+				return
+			case <-ctx.Done():
 				return
 			}
 		}
