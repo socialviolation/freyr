@@ -204,13 +204,9 @@ func (c *CaptainController) routinePurger(ctx context.Context) chan bool {
 
 	go func() {
 		for {
-			for k, v := range c.conscripts {
-				log.Debug().Msgf("Cycling stale conscripts %s", k)
-				if time.Since(v.LastSeen) > c.cycleStaleDuration {
-					log.Debug().Msgf("purging %s", k)
-					delete(c.conscripts, k)
-				}
-			}
+			traceCtx, span := tracer.Start(ctx, "conscripts_purge")
+			c.purgeConscripts(traceCtx)
+			span.End()
 
 			select {
 			case <-time.After(c.cycleStaleDuration):
@@ -223,6 +219,21 @@ func (c *CaptainController) routinePurger(ctx context.Context) chan bool {
 	}()
 
 	return stop
+}
+
+func (c *CaptainController) purgeConscripts(ctx context.Context) {
+	for k, v := range c.conscripts {
+		_, conSpan := tracer.Start(ctx, "conscript_check")
+		conSpan.SetAttributes(attribute.String("conscript_ip", v.IP))
+
+		log.Debug().Msgf("Cycling stale conscripts %s", k)
+		if time.Since(v.LastSeen) > c.cycleStaleDuration {
+			conSpan.AddEvent("conscript_remove")
+			log.Debug().Msgf("purging %s", k)
+			delete(c.conscripts, k)
+		}
+		conSpan.End()
+	}
 }
 
 func (c *CaptainController) routineMetrics(ctx context.Context) chan bool {

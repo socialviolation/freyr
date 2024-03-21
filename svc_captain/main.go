@@ -8,6 +8,7 @@ import (
 	"github.com/socialviolation/freyr/shared/initotel"
 	"github.com/socialviolation/freyr/svc_captain/api"
 	"github.com/socialviolation/freyr/svc_captain/middlewares"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,11 +19,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+const service = "freyr/captain"
+
 func setupRoutes(ctx context.Context) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middlewares.DefaultStructuredLogger())
+	r.Use(otelgin.Middleware(service))
 
 	// get global Monitor object
 	m := ginmetrics.GetMonitor()
@@ -53,7 +57,7 @@ func main() {
 	viper.SetDefault("host.port", 5001)
 	viper.SetDefault("host.name", "0.0.0.0")
 
-	otelShutdown, err := initotel.NewSDK(context.Background(), "freyr/captain")
+	otelShutdown, err := initotel.NewSDK(context.Background(), service)
 	ctx := context.Background()
 	ctx, cancelSchedules := context.WithCancel(ctx)
 
