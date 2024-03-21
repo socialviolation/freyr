@@ -1,0 +1,6 @@
+resources:
+  - namespace.yaml
+  - prometheus.yaml
+  - jaeger.yaml
+  - otel-collector.yaml
+  - grafana.yaml

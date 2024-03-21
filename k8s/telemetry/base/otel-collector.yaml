@@ -1,0 +1,110 @@
+# Otel-Collector ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-configmap
+  namespace: telemetry
+data:
+  otel-collector-config.yml: |-
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    processors:
+      batch:
+    
+    exporters:
+      debug:
+      otlp:
+        endpoint: "jaeger-service:4317"
+        tls:
+          insecure: true
+    
+      otlphttp/prometheus:
+        endpoint: "http://prometheus-service:9090/api/v1/otlp"
+        tls:
+          insecure: true
+    
+    #extensions:
+    #  health_check:
+    
+    service:
+      #  extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp, debug]
+    
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/prometheus, debug]
+
+
+---
+
+# Otel-Collector Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector-deployment
+  namespace: telemetry
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - args:
+            - --config
+            - /etc/otelcol/otel-collector-config.yml
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: IfNotPresent
+          name: otel-collector
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+            - containerPort: 8888
+            - containerPort: 8889
+          volumeMounts:
+            - mountPath: /etc/otelcol
+              name: otel-collector-volume
+      restartPolicy: Always
+      volumes:
+        - name: otel-collector-volume
+          configMap:
+            name: otel-collector-configmap
+            items:
+              - key: otel-collector-config.yml
+                path: otel-collector-config.yml
+
+---
+
+# Otel-Collector Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector-service
+  namespace: telemetry
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - name: "4317"
+      port: 4317
+      targetPort: 4317
+    - name: "4318"
+      port: 4318
+      targetPort: 4318

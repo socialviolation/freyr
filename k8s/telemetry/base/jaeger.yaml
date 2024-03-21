@@ -1,0 +1,90 @@
+---
+
+# Jaeger ConfigMap for UI
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-ui-configmap
+  namespace: telemetry
+data:
+  jaeger-ui.json: |-
+    {
+      "monitor": {
+        "menuEnabled": true
+      },
+      "dependencies": {
+        "menuEnabled": true
+      }
+    }
+
+---
+
+# Jaeger Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-deployment
+  namespace: telemetry
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - args:
+            - --query.ui-config
+            - /etc/jaeger/ui/jaeger-ui.json
+          env:
+            - name: METRICS_STORAGE_TYPE
+              value: prometheus
+            - name: PROMETHEUS_SERVER_URL
+              value: http://prometheus-service:9090
+          image: jaegertracing/all-in-one:latest
+          imagePullPolicy: IfNotPresent
+          name: jaeger
+          ports:
+            - containerPort: 16686
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - mountPath: /etc/jaeger/ui
+              name: jaeger-volume
+      restartPolicy: Always
+      volumes:
+        - name: jaeger-volume
+          configMap:
+            name: jaeger-ui-configmap
+            items:
+              - key: jaeger-ui.json
+                path: jaeger-ui.json
+
+---
+
+# Jaeger Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-service
+  namespace: telemetry
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: "4317"
+      port: 4317
+      targetPort: 4317
+    - name: "4318"
+      port: 4318
+      targetPort: 4318
+    - name: "16686"
+      port: 16686
+      targetPort: 16686
+
+---
