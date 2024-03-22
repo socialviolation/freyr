@@ -309,6 +309,9 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 								corev1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
+						Env: []corev1.EnvVar{
+							{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://otel-collector-service.telemetry.svc.cluster.local/"},
+						},
 						EnvFrom: []corev1.EnvFromSource{{
 							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{

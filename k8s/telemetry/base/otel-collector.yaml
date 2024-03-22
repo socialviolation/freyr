@@ -3,7 +3,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: otel-collector-configmap
-  namespace: telemetry
 data:
   otel-collector-config.yml: |-
     receivers:
@@ -53,7 +52,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: otel-collector-deployment
-  namespace: telemetry
   labels:
     app: otel-collector
 spec:
@@ -97,7 +95,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: otel-collector-service
-  namespace: telemetry
 spec:
   selector:
     app: otel-collector

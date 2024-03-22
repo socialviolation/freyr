@@ -1,4 +1,5 @@
 FROM golang:1.22 as builder
+ENV GOPROXY=https://platform-gomodproxy.services.x.gcp.anz,direct
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
