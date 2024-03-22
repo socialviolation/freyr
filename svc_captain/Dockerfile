@@ -1,6 +1,6 @@
 FROM golang:1.22 as builder
-WORKDIR /app/modes
-COPY modes .
+WORKDIR /app/shared
+COPY shared .
 WORKDIR /app/svc_captain
 COPY svc_captain/go.mod svc_captain/go.sum svc_captain/go.work svc_captain/go.work.sum ./
 RUN go work use
