@@ -399,7 +399,9 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 						Env: []corev1.EnvVar{{
 							Name:  "CAPTAIN_URL",
 							Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port),
-						}},
+						},
+							{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://otel-collector-service.telemetry.svc.cluster.local:4318/"},
+						},
 					}},
 				},
 			},

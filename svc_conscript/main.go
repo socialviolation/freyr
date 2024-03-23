@@ -1,11 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gin-gonic/gin"
+	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/rs/zerolog/log"
+	"github.com/socialviolation/freyr/shared/initotel"
+	"github.com/socialviolation/freyr/shared/middlewares"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,12 +20,24 @@ import (
 	"time"
 )
 
-func conscriptRequest(url string) error {
-	_, err := http.Get(fmt.Sprintf("%s/enlist", url))
+const service = "freyr/conscript"
+
+var (
+	tracer = otel.GetTracerProvider().Tracer("conscript")
+	//meter  = otel.GetMeterProvider().Meter("conscript")
+)
+
+func conscriptRequest(ctx context.Context, url string) error {
+	ctx, span := tracer.Start(ctx, "conscript_enlist_request")
+	_, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/enlist", url), nil)
 	if err != nil {
+		span.AddEvent("enlist_failed")
 		return err
 	}
 	log.Info().Msgf("enlisted to %s", url)
+
+	span.AddEvent("enlist_success", trace.WithAttributes(attribute.String("captain", url)))
+	span.End()
 	return nil
 }
 
@@ -27,10 +46,13 @@ func scheduleConscription(url string, d time.Duration) chan bool {
 
 	go func() {
 		for {
-			err := conscriptRequest(url)
+			ctx := context.Background()
+			ctx, span := tracer.Start(ctx, "conscript_enlist")
+			err := conscriptRequest(ctx, url)
 			if err != nil {
 				log.Error().Err(err).Msgf("error enlisting to %s", url)
 			}
+			span.End()
 			select {
 			case <-time.After(d):
 			case <-stop:
@@ -42,14 +64,19 @@ func scheduleConscription(url string, d time.Duration) chan bool {
 	return stop
 }
 
-func setupRoutes() *chi.Mux {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Heartbeat("/ping"))
+func setupRoutes() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middlewares.DefaultStructuredLogger())
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("."))
+	// get global Monitor object
+	m := ginmetrics.GetMonitor()
+	m.SetMetricPath("/metrics")
+	r.Use(otelgin.Middleware(service))
+
+	r.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"status": "okay"})
 	})
 
 	return r
@@ -64,6 +91,13 @@ func main() {
 	viper.SetDefault("captain.url", "http://freyr-captain:5001")
 
 	url := viper.GetString("captain.url")
+	ctx := context.Background()
+	otelShutdown, err := initotel.NewSDK(ctx, service)
+	if err != nil {
+		log.Error().Err(err).Msg("error initializing otel")
+		os.Exit(1)
+	}
+
 	stopConscription := scheduleConscription(url, time.Second*1)
 	defer close(stopConscription)
 
@@ -88,6 +122,12 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	<-c
+	err = otelShutdown(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("error while shutting down otel")
+		os.Exit(1)
+	}
+
 	stopConscription <- true
 
 	log.Info().Msg("gracefully shut down")

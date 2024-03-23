@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/socialviolation/freyr/shared/initotel"
+	"github.com/socialviolation/freyr/shared/middlewares"
 	"github.com/socialviolation/freyr/svc_captain/api"
-	"github.com/socialviolation/freyr/svc_captain/middlewares"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"os"
@@ -33,7 +33,7 @@ func setupRoutes(ctx context.Context) *gin.Engine {
 	// +optional set metric path, default /debug/metrics
 	m.SetMetricPath("/metrics")
 	// +optional set slow time, default 5s
-	m.SetSlowTime(10)
+	m.SetSlowTime(5)
 	// +optional set request duration, default {0.1, 0.3, 1.2, 5, 10}
 	// used to p95, p99
 	m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
