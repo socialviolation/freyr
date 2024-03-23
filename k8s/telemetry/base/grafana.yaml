@@ -12,14 +12,14 @@ data:
       - name: Prometheus
         type: prometheus
         uid: dsprometheus
-        url: http://prometheus-service:9090
+        url: http://prometheus-service.telemetry.svc.cluster.local:9090
         isDefault: false
         access: proxy
         editable: true
       - name: Jaeger
         type: jaeger
         uid: dsjaeger
-        url: http://jaeger-service:16686
+        url: http://jaeger-service.telemetry.svc.cluster.local:16686
         isDefault: false
         access: proxy
         editable: true
@@ -103,11 +103,9 @@ kind: Service
 metadata:
   name: grafana-service
 spec:
+  selector:
+    app: grafana
   ports:
     - port: 3000
       protocol: TCP
       targetPort: http-grafana
-  selector:
-    app: grafana
-  sessionAffinity: None
-  type: LoadBalancer

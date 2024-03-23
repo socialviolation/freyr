@@ -310,7 +310,7 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 							},
 						},
 						Env: []corev1.EnvVar{
-							{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://otel-collector-service.telemetry.svc.cluster.local/"},
+							{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://otel-collector-service.telemetry.svc.cluster.local:4318/"},
 						},
 						EnvFrom: []corev1.EnvFromSource{{
 							ConfigMapRef: &corev1.ConfigMapEnvSource{

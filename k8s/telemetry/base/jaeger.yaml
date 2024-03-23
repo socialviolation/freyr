@@ -43,7 +43,7 @@ spec:
             - name: METRICS_STORAGE_TYPE
               value: prometheus
             - name: PROMETHEUS_SERVER_URL
-              value: http://prometheus-service:9090
+              value: http://prometheus-service.telemetry.svc.cluster.local:9090
           image: jaegertracing/all-in-one:latest
           imagePullPolicy: IfNotPresent
           name: jaeger

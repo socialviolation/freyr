@@ -19,15 +19,13 @@ data:
     exporters:
       debug:
       otlp:
-        endpoint: "jaeger-service:4317"
+        endpoint: "jaeger-service.telemetry.svc.cluster.local:4317"
         tls:
           insecure: true
-    
-      otlphttp/prometheus:
-        endpoint: "http://prometheus-service:9090/api/v1/otlp"
-        tls:
-          insecure: true
-    
+      
+      prometheus:
+        endpoint: '0.0.0.0:8999'
+
     #extensions:
     #  health_check:
     
@@ -41,8 +39,7 @@ data:
     
         metrics:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [otlphttp/prometheus, debug]
+          exporters: [prometheus, debug]
 
 
 ---
@@ -74,8 +71,7 @@ spec:
           ports:
             - containerPort: 4317
             - containerPort: 4318
-            - containerPort: 8888
-            - containerPort: 8889
+            - containerPort: 8999
           volumeMounts:
             - mountPath: /etc/otelcol
               name: otel-collector-volume
@@ -105,3 +101,6 @@ spec:
     - name: "4318"
       port: 4318
       targetPort: 4318
+    - name: "8999"
+      port: 8999
+      targetPort: 8999
