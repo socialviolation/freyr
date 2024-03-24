@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"html/template"
 	"math"
@@ -112,7 +113,8 @@ func (c *CaptainController) startTrace(ctx context.Context, name string) (contex
 }
 
 func (c *CaptainController) enlist(g *gin.Context) {
-	_, span := tracer.Start(g.Request.Context(), "enlist")
+	ctx := g.Request.Context()
+	span := trace.SpanFromContext(otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(g.Request.Header)))
 	defer span.End()
 	log.Info().Msgf("enlisting %s", g.Request.RemoteAddr)
 

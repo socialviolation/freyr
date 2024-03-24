@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"os"
@@ -29,12 +30,15 @@ var (
 
 func conscriptRequest(ctx context.Context, url string) error {
 	ctx, span := tracer.Start(ctx, "conscript_enlist_request")
-	_, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/enlist", url), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/enlist", url), nil)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+	client := http.DefaultClient
+	res, err := client.Do(req)
 	if err != nil {
 		span.AddEvent("enlist_failed")
 		return err
 	}
-	log.Info().Msgf("enlisted to %s", url)
+	log.Info().Msgf("enlisted to %s - %d", url, res.StatusCode)
 
 	span.AddEvent("enlist_success", trace.WithAttributes(attribute.String("captain", url)))
 	span.End()
