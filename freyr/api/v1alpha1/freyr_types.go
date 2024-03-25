@@ -30,20 +30,28 @@ type FreyrSpec struct {
 	// +kubebuilder:validation:Enum=weather;trig
 	// +kubebuilder:validation:default:=weather
 	Mode string `json:"mode,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	Weather WeatherMode `json:"weather,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	Trig TrigMode `json:"trig,omitempty"`
+	// +kubebuilder:validation:Optional
+	Captain PodSpec `json:"captain,omitempty"`
+	// +kubebuilder:validation:Optional
+	Conscript PodSpec `json:"conscript,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:default:=latest
-	CaptainTag string `json:"captainTag,omitempty"`
+	OTelEndpoint string `json:"otelEndpoint"`
+}
+
+type PodSpec struct {
+	// +kubebuilder:validation:Optional
+	Image string `json:"image,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:default:=latest
-	ConscriptTag string `json:"conscriptTag,omitempty"`
+	// +kubebuilder:validation:default:=0
+	// +kubebuilder:validation:Minimum:=0
+	// +kubebuilder:validation:Maximum:=1
+	FaultInjectionRatio float32 `json:"faultInjectionRatio,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	OTelEndpoint string `json:"otelEndpoint"`

@@ -18,6 +18,8 @@ data:
     
     exporters:
       debug:
+        verbosity: detailed
+      
       otlp:
         endpoint: "jaeger-service.telemetry.svc.cluster.local:4317"
         tls:
@@ -35,12 +37,12 @@ data:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlp, debug]
+          exporters: [otlp]
     
         metrics:
           receivers: [otlp]
           exporters: [prometheus, debug]
-
+          
 
 ---
 
