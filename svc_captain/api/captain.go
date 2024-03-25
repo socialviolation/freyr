@@ -77,24 +77,25 @@ func (c *CaptainController) Serve(ctx context.Context, r *gin.Engine, middleware
 
 	mtc := ginmetrics.Metric{
 		Type:        ginmetrics.Gauge,
-		Name:        "captain_conscripts_target",
+		Name:        MetricConscriptsTarget,
 		Description: "The target number of conscripts",
 		Labels:      []string{},
 	}
 	_ = ginmetrics.GetMonitor().AddMetric(&mtc)
 	mac := ginmetrics.Metric{
 		Type:        ginmetrics.Gauge,
-		Name:        "captain_conscripts_actual",
+		Name:        MetricConscriptsActual,
 		Description: "The actual number of conscripts",
 		Labels:      []string{},
 	}
 	_ = ginmetrics.GetMonitor().AddMetric(&mac)
 	mue := ginmetrics.Metric{
 		Type:        ginmetrics.Counter,
-		Name:        "captain_conscripts_total",
+		Name:        MetricConscriptsUnique,
 		Description: "Total number of unique conscripts",
 		Labels:      []string{},
 	}
+
 	err := ginmetrics.GetMonitor().AddMetric(&mue)
 	if err != nil {
 		log.Printf(err.Error())
@@ -114,14 +115,17 @@ func (c *CaptainController) startTrace(ctx context.Context, name string) (contex
 
 func (c *CaptainController) enlist(g *gin.Context) {
 	ctx := g.Request.Context()
-	span := trace.SpanFromContext(otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(g.Request.Header)))
-	defer span.End()
+	reqSpan := trace.SpanFromContext(otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(g.Request.Header)))
+	defer reqSpan.End()
 	log.Info().Msgf("enlisting %s", g.Request.RemoteAddr)
 
-	ipAttr := attribute.String("enlist.ip", g.Request.RemoteAddr)
+	ctx, span := tracer.Start(ctx, "conscript_enlist_request")
+	defer span.End()
+
+	ipAttr := attribute.String("enlist.conscript_ip", g.Request.RemoteAddr)
 	span.SetAttributes(ipAttr)
 	_, found := c.conscripts[g.Request.RemoteAddr]
-	isNewAttr := attribute.Bool("enlist.new", !found)
+	isNewAttr := attribute.Bool("enlist.is_new", !found)
 	span.SetAttributes(isNewAttr)
 
 	if !found {
@@ -228,8 +232,8 @@ func (c *CaptainController) purgeConscripts(ctx context.Context) {
 		_, conSpan := tracer.Start(ctx, "conscript_check")
 		conSpan.SetAttributes(attribute.String("conscript_ip", v.IP))
 
-		log.Debug().Msgf("Cycling stale conscripts %s", k)
 		if time.Since(v.LastSeen) > c.cycleStaleDuration {
+			log.Debug().Msgf("Cycling stale conscripts %s", k)
 			conSpan.AddEvent("conscript_remove")
 			log.Debug().Msgf("purging %s", k)
 			delete(c.conscripts, k)

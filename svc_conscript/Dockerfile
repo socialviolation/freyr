@@ -1,11 +1,13 @@
 FROM golang:1.22 as builder
-ENV GOPROXY=https://platform-gomodproxy.services.x.gcp.anz,direct
-WORKDIR /app
-COPY go.mod go.sum ./
+WORKDIR /app/shared
+COPY shared .
+WORKDIR /app/svc_conscript
+COPY svc_conscript/go.mod svc_conscript/go.sum svc_conscript/go.work svc_conscript/go.work.sum ./
+RUN go work use
 RUN go mod download
 RUN go mod verify
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /conscript .
+COPY svc_conscript .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /conscript main.go
 
 
 FROM gcr.io/distroless/static-debian11

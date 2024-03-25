@@ -7,10 +7,11 @@ not_found_auto_install = true
 
 [tasks.build]
 description = '🐳 Building Docker Image'
+dir = ".."
 run = """
 #!/usr/bin/env bash
 echo "🐳 Building Docker Image"
-docker build -t australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:latest -f Dockerfile .
+docker build -t australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:latest -f svc_conscript/Dockerfile .
 """
 alias = 'b'
 
