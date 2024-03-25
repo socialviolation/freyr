@@ -16,9 +16,9 @@ data:
       - job_name: aggregated-trace-metrics
         static_configs:
           - targets: ['otel-collector-service.telemetry.svc.cluster.local:8999']
-#      - job_name: captain
-#        static_configs:
-#          - targets: ['captain-svc.default.svc.cluster.local:80']
+      - job_name: captain
+        static_configs:
+          - targets: ['captain-svc.default.svc.cluster.local:80']
 
 ---
 

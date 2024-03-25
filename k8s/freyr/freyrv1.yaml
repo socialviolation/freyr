@@ -8,3 +8,4 @@ spec:
     duration: 300s
     min: 2
     max: 18
+  otelEndpoint: "http://otel-collector-svc.telemetry.svc.cluster.local:4318/"

@@ -34,10 +34,16 @@ spec:
           spec:
             description: FreyrSpec defines the desired state of Freyr
             properties:
+              captainTag:
+                type: string
+              conscriptTag:
+                type: string
               mode:
                 enum:
                 - weather
                 - trig
+                type: string
+              otelEndpoint:
                 type: string
               trig:
                 properties:

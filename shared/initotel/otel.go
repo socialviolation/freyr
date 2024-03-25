@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -81,14 +81,14 @@ func traceProvider(ctx context.Context, name string) (*trace.TracerProvider, err
 }
 
 func metricProvider(ctx context.Context, name string) (*metric.MeterProvider, error) {
-	exporter, err := prometheus.New()
+	exporter, err := otlpmetrichttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name))),
-		metric.WithReader(exporter),
+		metric.WithReader(metric.NewPeriodicReader(exporter)),
 	)
 	return meterProvider, nil
 }

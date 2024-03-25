@@ -30,10 +30,23 @@ type FreyrSpec struct {
 	// +kubebuilder:validation:Enum=weather;trig
 	// +kubebuilder:validation:default:=weather
 	Mode string `json:"mode,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Weather WeatherMode `json:"weather,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	Trig TrigMode `json:"trig,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:default:=latest
+	CaptainTag string `json:"captainTag,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:default:=latest
+	ConscriptTag string `json:"conscriptTag,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	OTelEndpoint string `json:"otelEndpoint"`
 }
 
 type WeatherMode struct {

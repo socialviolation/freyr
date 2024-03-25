@@ -85,6 +85,12 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Failed to get Freyr")
 		return ctrl.Result{}, err
 	}
+	if freyrOp.Spec.CaptainTag == "" {
+		freyrOp.Spec.CaptainTag = "latest"
+	}
+	if freyrOp.Spec.ConscriptTag == "" {
+		freyrOp.Spec.ConscriptTag = "latest"
+	}
 	log.Info("Reconciling Freyr", "Name", freyrOp.Name, "Namespace", ns)
 
 	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", ns)
@@ -297,21 +303,19 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image: "australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest",
+						Image: fmt.Sprintf("australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:%s", c.Spec.CaptainTag),
 						Name:  "captain",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5001,
 						}},
-						ImagePullPolicy: corev1.PullAlways,
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("100m"),
-								corev1.ResourceMemory: resource.MustParse("128Mi"),
-							},
-						},
-						Env: []corev1.EnvVar{
-							{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: "http://otel-collector-service.telemetry.svc.cluster.local:4318/"},
-						},
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						//Resources: corev1.ResourceRequirements{
+						//	Limits: corev1.ResourceList{
+						//		corev1.ResourceCPU:    resource.MustParse("200m"),
+						//		corev1.ResourceMemory: resource.MustParse("512Mi"),
+						//	},
+						//},
+						Env: []corev1.EnvVar{},
 						EnvFrom: []corev1.EnvFromSource{{
 							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
@@ -323,6 +327,9 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 				},
 			},
 		},
+	}
+	if c.Spec.OTelEndpoint != "" {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: c.Spec.OTelEndpoint})
 	}
 
 	err := ctrl.SetControllerReference(c, dep, r.Scheme)
@@ -385,11 +392,12 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image: "australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:latest",
+						Image: fmt.Sprintf("australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:%s", c.Spec.ConscriptTag),
 						Name:  "conscript",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5003,
 						}},
+						ImagePullPolicy: corev1.PullIfNotPresent,
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("50m"),
@@ -401,15 +409,15 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 								Name:  "CAPTAIN_URL",
 								Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port),
 							},
-							{
-								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-								Value: "http://otel-collector-service.telemetry.svc.cluster.local:4318/",
-							},
 						},
 					}},
 				},
 			},
 		},
+	}
+
+	if c.Spec.OTelEndpoint != "" {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: c.Spec.OTelEndpoint})
 	}
 
 	err := ctrl.SetControllerReference(c, dep, r.Scheme)
