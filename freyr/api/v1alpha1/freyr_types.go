@@ -40,21 +40,14 @@ type FreyrSpec struct {
 	Conscript PodSpec `json:"conscript,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	OTelEndpoint string `json:"otelEndpoint"`
+	EnvVars map[string]string `json:"envs"`
 }
 
 type PodSpec struct {
 	// +kubebuilder:validation:Optional
 	Image string `json:"image,omitempty"`
-
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:default:=0
-	// +kubebuilder:validation:Minimum:=0
-	// +kubebuilder:validation:Maximum:=1
-	FaultInjectionRatio float32 `json:"faultInjectionRatio,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	OTelEndpoint string `json:"otelEndpoint"`
+	EnvVars map[string]string `json:"envs"`
 }
 
 type WeatherMode struct {

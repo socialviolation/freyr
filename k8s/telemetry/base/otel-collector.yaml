@@ -26,7 +26,7 @@ data:
           insecure: true
       
       prometheus:
-        endpoint: '0.0.0.0:8999'
+        endpoint: '0.0.0.0:8889'
 
     #extensions:
     #  health_check:
@@ -40,8 +40,8 @@ data:
           exporters: [otlp]
     
         metrics:
-          receivers: [otlp]
-          exporters: [prometheus, debug]
+          receivers: [debug, otlp]
+          exporters: [debug, prometheus]
           
 
 ---
@@ -73,7 +73,8 @@ spec:
           ports:
             - containerPort: 4317
             - containerPort: 4318
-            - containerPort: 8999
+            - containerPort: 8888
+            - containerPort: 8889
           volumeMounts:
             - mountPath: /etc/otelcol
               name: otel-collector-volume
@@ -103,6 +104,6 @@ spec:
     - name: "4318"
       port: 4318
       targetPort: 4318
-    - name: "8999"
-      port: 8999
-      targetPort: 8999
+    - name: "8889"
+      port: 8889
+      targetPort: 8889

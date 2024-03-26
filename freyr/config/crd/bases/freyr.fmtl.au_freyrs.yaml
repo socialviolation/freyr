@@ -36,26 +36,30 @@ spec:
             properties:
               captain:
                 properties:
-                  faultInjectionRatio: {}
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
                   image:
-                    type: string
-                  otelEndpoint:
                     type: string
                 type: object
               conscript:
                 properties:
-                  faultInjectionRatio: {}
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
                   image:
                     type: string
-                  otelEndpoint:
-                    type: string
+                type: object
+              envs:
+                additionalProperties:
+                  type: string
                 type: object
               mode:
                 enum:
                 - weather
                 - trig
-                type: string
-              otelEndpoint:
                 type: string
               trig:
                 properties:

@@ -13,12 +13,12 @@ data:
       # scrape_timeout is set to the global default (10s).
 
     scrape_configs:
-      - job_name: aggregated-trace-metrics
+      - job_name: otlp-pipeline-metrics
         static_configs:
-          - targets: ['otel-collector-service.telemetry.svc.cluster.local:8999']
-      - job_name: captain
+          - targets: ['otel-collector-service.telemetry.svc.cluster.local:8889']
+      - job_name: otlp-metrics
         static_configs:
-          - targets: ['captain-svc.default.svc.cluster.local:80']
+          - targets: ['otel-collector-service.telemetry.svc.cluster.local:8888']
 
 ---
 
@@ -45,7 +45,7 @@ spec:
           name: prometheus
           args:
             - '--config.file=/etc/prometheus/prometheus.yml'
-            - --enable-feature=otlp-write-receiver
+            - '--enable-feature=otlp-write-receiver'
           ports:
             - containerPort: 9090
           volumeMounts:

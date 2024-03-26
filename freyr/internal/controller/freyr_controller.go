@@ -85,12 +85,7 @@ func (r *FreyrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		log.Error(err, "Failed to get Freyr")
 		return ctrl.Result{}, err
 	}
-	if freyrOp.Spec.CaptainTag == "" {
-		freyrOp.Spec.CaptainTag = "latest"
-	}
-	if freyrOp.Spec.ConscriptTag == "" {
-		freyrOp.Spec.ConscriptTag = "latest"
-	}
+
 	log.Info("Reconciling Freyr", "Name", freyrOp.Name, "Namespace", ns)
 
 	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", ns)
@@ -287,6 +282,10 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 	replicas := int32(1)
 	ls := labelsForCaptain()
 
+	if c.Spec.Captain.Image == "" {
+		c.Spec.Captain.Image = "australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest"
+	}
+
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "captain",
@@ -303,7 +302,7 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image: fmt.Sprintf("australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:%s", c.Spec.CaptainTag),
+						Image: c.Spec.Captain.Image,
 						Name:  "captain",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5001,
@@ -328,8 +327,13 @@ func (r *FreyrReconciler) deploymentForCaptain(c *freyrv1alpha1.Freyr, config *c
 			},
 		},
 	}
-	if c.Spec.OTelEndpoint != "" {
-		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: c.Spec.OTelEndpoint})
+
+	for k, v := range c.Spec.EnvVars {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
+	}
+
+	for k, v := range c.Spec.Captain.EnvVars {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
 	}
 
 	err := ctrl.SetControllerReference(c, dep, r.Scheme)
@@ -375,6 +379,9 @@ func labelsForConscript() map[string]string {
 func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *corev1.Service) *appsv1.Deployment {
 	replicas := int32(1)
 	ls := labelsForConscript()
+	if c.Spec.Conscript.Image == "" {
+		c.Spec.Conscript.Image = "australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:latest"
+	}
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -392,7 +399,7 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image: fmt.Sprintf("australia-southeast2-docker.pkg.dev/freyr-operator/imgs/conscript:%s", c.Spec.ConscriptTag),
+						Image: c.Spec.Conscript.Image,
 						Name:  "conscript",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5003,
@@ -416,8 +423,12 @@ func (r *FreyrReconciler) deploymentForConscript(c *freyrv1alpha1.Freyr, svc *co
 		},
 	}
 
-	if c.Spec.OTelEndpoint != "" {
-		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: "OTEL_EXPORTER_OTLP_ENDPOINT", Value: c.Spec.OTelEndpoint})
+	for k, v := range c.Spec.EnvVars {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
+	}
+
+	for k, v := range c.Spec.Conscript.EnvVars {
+		dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: k, Value: v})
 	}
 
 	err := ctrl.SetControllerReference(c, dep, r.Scheme)

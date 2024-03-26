@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/socialviolation/freyr/shared/initotel"
 	"github.com/socialviolation/freyr/shared/middlewares"
 	"github.com/socialviolation/freyr/svc_captain/api"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,19 +24,6 @@ func setupRoutes(ctx context.Context) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middlewares.DefaultStructuredLogger())
-	r.Use(otelgin.Middleware(service))
-
-	// get global Monitor object
-	m := ginmetrics.GetMonitor()
-	// +optional set metric path, default /debug/metrics
-	m.SetMetricPath("/metrics")
-	// +optional set slow time, default 5s
-	m.SetSlowTime(5)
-	// +optional set request duration, default {0.1, 0.3, 1.2, 5, 10}
-	// used to p95, p99
-	m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
-	// set middleware for gin
-	m.Use(r)
 
 	captainSvc, err := api.NewCaptainController()
 	if err != nil {
@@ -75,8 +60,7 @@ func main() {
 			log.Error().Err(err).Msg("error during listen and serve")
 			return
 		}
-		log.Info().Msgf(
-			"serving @ %s", srv.Addr)
+		log.Info().Msgf("serving @ %s", srv.Addr)
 	}()
 
 	c := make(chan os.Signal, 1)
@@ -84,9 +68,11 @@ func main() {
 
 	log.Info().Msgf("serving @ %s", srv.Addr)
 	<-c
-	cancelSchedules()
+
+	log.Info().Msgf("Shutdown event received")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	cancelSchedules()
 	cancel()
 	err = srv.Shutdown(ctx)
 	if err != nil {

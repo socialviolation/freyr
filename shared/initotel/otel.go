@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	"time"
 )
 
 // NewSDK bootstraps the OpenTelemetry pipeline.
@@ -88,7 +89,7 @@ func metricProvider(ctx context.Context, name string) (*metric.MeterProvider, er
 
 	meterProvider := metric.NewMeterProvider(
 		metric.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(name))),
-		metric.WithReader(metric.NewPeriodicReader(exporter)),
+		metric.WithReader(metric.NewPeriodicReader(exporter, metric.WithInterval(3*time.Second))),
 	)
 	return meterProvider, nil
 }
