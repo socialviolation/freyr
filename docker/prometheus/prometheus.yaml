@@ -11,9 +11,9 @@ alerting:
       api_version: v1
 
 scrape_configs:
-  - job_name: captain
+  - job_name: otel
     honor_timestamps: true
     scrape_interval: 5s
     scrape_timeout: 3s
     static_configs:
-      - targets: [host.docker.internal:5001]
+      - targets: [host.docker.internal:8889]

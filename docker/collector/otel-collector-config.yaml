@@ -2,9 +2,9 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:9317
+        endpoint: ":4317"
       http:
-        endpoint: 0.0.0.0:9318
+        endpoint: ":4318"
 
 processors:
   batch:
@@ -21,11 +21,11 @@ exporters:
     tls:
       insecure: true
 
-#extensions:
-#  health_check:
+extensions:
+  health_check:
 
 service:
-#  extensions: [health_check]
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
