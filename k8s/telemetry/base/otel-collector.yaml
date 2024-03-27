@@ -40,9 +40,8 @@ data:
           exporters: [otlp]
     
         metrics:
-          receivers: [debug, otlp]
+          receivers: [otlp]
           exporters: [debug, prometheus]
-          
 
 ---
 
