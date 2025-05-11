@@ -1,5 +1,5 @@
 [tools]
-go = "1.24.3"
+go = "1.24.0"
 
 [settings]
 experimental = true
@@ -17,3 +17,9 @@ description = 'Open the DECK 🎥'
 alias = "do"
 dir = "deck"
 run = "open deck.html"
+
+[tasks.port_captain]
+run="kubectl port-forward -n ship-operator deployment/captain 5001:5001;"
+
+[tasks.port_grafana]
+run="kubectl port-forward -n telemetry deployment/grafana 3000:3000;"

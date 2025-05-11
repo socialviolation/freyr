@@ -1,4 +1,4 @@
-FROM golang:1.22 as builder
+FROM golang:1.24 AS builder
 WORKDIR /app/shared
 COPY shared .
 WORKDIR /app/svc_captain
