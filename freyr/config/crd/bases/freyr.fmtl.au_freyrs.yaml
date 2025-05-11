@@ -32,7 +32,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: FreyrSpec defines the desired state of Freyr
+            description: ShipSpec defines the desired state of Freyr
             properties:
               captain:
                 properties:

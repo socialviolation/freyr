@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/socialviolation/freyr/shared/initotel"
 	"github.com/socialviolation/freyr/shared/middlewares"
+	"github.com/socialviolation/freyr/shared/telemetry"
 	"github.com/socialviolation/freyr/svc_captain/api"
 	"net/http"
 	"os"
@@ -42,7 +42,7 @@ func main() {
 	viper.SetDefault("host.port", 5001)
 	viper.SetDefault("host.name", "0.0.0.0")
 
-	otelShutdown, err := initotel.NewSDK(context.Background(), service)
+	otelShutdown, err := telemetry.NewSDK(context.Background(), service)
 	ctx := context.Background()
 	ctx, cancelSchedules := context.WithCancel(ctx)
 

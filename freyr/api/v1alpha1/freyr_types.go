@@ -22,8 +22,8 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// FreyrSpec defines the desired state of Freyr
-type FreyrSpec struct {
+// ShipSpec defines the desired state of Freyr
+type ShipSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +kubebuilder:validation:Required
@@ -80,7 +80,7 @@ type Freyr struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FreyrSpec   `json:"spec,omitempty"`
+	Spec   ShipSpec    `json:"spec,omitempty"`
 	Status FreyrStatus `json:"status,omitempty"`
 }
 

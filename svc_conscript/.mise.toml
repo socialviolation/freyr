@@ -1,9 +1,3 @@
-[tools]
-go = "1.22.0"
-
-[settings]
-experimental = true
-not_found_auto_install = true
 
 [tasks.build]
 description = '🐳 Building Docker Image'

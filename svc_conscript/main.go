@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/penglongli/gin-metrics/ginmetrics"
 	"github.com/rs/zerolog/log"
-	"github.com/socialviolation/freyr/shared/initotel"
 	"github.com/socialviolation/freyr/shared/middlewares"
+	"github.com/socialviolation/freyr/shared/telemetry"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
@@ -96,7 +96,7 @@ func main() {
 
 	url := viper.GetString("captain.url")
 	ctx := context.Background()
-	otelShutdown, err := initotel.NewSDK(ctx, service)
+	otelShutdown, err := telemetry.NewSDK(ctx, service)
 	if err != nil {
 		log.Error().Err(err).Msg("error initializing otel")
 		os.Exit(1)

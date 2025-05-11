@@ -29,7 +29,7 @@ metadata:
 spec:
   mode: trig
   trig:
-    duration: 300s
+    duration: 314s
     min: 2
     max: 18
 ```
