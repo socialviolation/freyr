@@ -63,3 +63,21 @@ spec:
                 port:
                   number: 3000
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otel-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: otel.cluster.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otel-collector-service
+                port:
+                  number: 4318
+---
