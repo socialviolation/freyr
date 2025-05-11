@@ -39,10 +39,59 @@ spec:
           spec:
             description: ShipSpec defines the desired state of Ship
             properties:
-              foo:
-                description: Foo is an example field of Ship. Edit ship_types.go to
-                  remove/update
+              captain:
+                properties:
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  image:
+                    type: string
+                type: object
+              conscript:
+                properties:
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  image:
+                    type: string
+                type: object
+              envs:
+                additionalProperties:
+                  type: string
+                type: object
+              mode:
+                enum:
+                - weather
+                - trig
                 type: string
+              trig:
+                properties:
+                  duration:
+                    type: string
+                  max:
+                    format: int32
+                    type: integer
+                  min:
+                    format: int32
+                    type: integer
+                type: object
+              weather:
+                properties:
+                  apiKey:
+                    type: string
+                  city:
+                    type: string
+                  country:
+                    type: string
+                required:
+                - apiKey
+                - city
+                - country
+                type: object
+            required:
+            - mode
             type: object
           status:
             description: ShipStatus defines the observed state of Ship

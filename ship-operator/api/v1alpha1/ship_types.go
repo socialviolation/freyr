@@ -28,8 +28,43 @@ type ShipSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Ship. Edit ship_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=weather;trig
+	// +kubebuilder:validation:default:=weather
+	Mode string `json:"mode,omitempty"`
+	// +kubebuilder:validation:Optional
+	Weather WeatherMode `json:"weather,omitempty"`
+	// +kubebuilder:validation:Optional
+	Trig TrigMode `json:"trig,omitempty"`
+	// +kubebuilder:validation:Optional
+	Captain PodSpec `json:"captain,omitempty"`
+	// +kubebuilder:validation:Optional
+	Conscript PodSpec `json:"conscript,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	EnvVars map[string]string `json:"envs"`
+}
+
+type PodSpec struct {
+	// +kubebuilder:validation:Optional
+	Image string `json:"image,omitempty"`
+	// +kubebuilder:validation:Optional
+	EnvVars map[string]string `json:"envs"`
+}
+
+type WeatherMode struct {
+	// +kubebuilder:validation:Required
+	Country string `json:"country,omitempty"`
+	// +kubebuilder:validation:Required
+	City string `json:"city,omitempty"`
+	// +kubebuilder:validation:Required
+	APIKey string `json:"apiKey,omitempty"`
+}
+
+type TrigMode struct {
+	Duration string `json:"duration,omitempty"`
+	Min      int32  `json:"min,omitempty"`
+	Max      int32  `json:"max,omitempty"`
 }
 
 // ShipStatus defines the observed state of Ship
