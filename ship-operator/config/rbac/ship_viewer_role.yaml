@@ -1,0 +1,23 @@
+# permissions for end users to view ships.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: ship-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: ship-viewer-role
+rules:
+- apiGroups:
+  - freyr.fmtl.au
+  resources:
+  - ships
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - freyr.fmtl.au
+  resources:
+  - ships/status
+  verbs:
+  - get

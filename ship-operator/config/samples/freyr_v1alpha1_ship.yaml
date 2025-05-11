@@ -1,0 +1,9 @@
+apiVersion: freyr.fmtl.au/v1alpha1
+kind: Ship
+metadata:
+  labels:
+    app.kubernetes.io/name: ship-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: ship-sample
+spec:
+  # TODO(user): Add fields here

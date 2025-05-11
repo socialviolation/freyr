@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- freyr_v1alpha1_ship.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
