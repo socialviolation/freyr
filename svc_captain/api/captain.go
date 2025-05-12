@@ -6,20 +6,21 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"github.com/socialviolation/freyr/shared"
-	"github.com/socialviolation/freyr/shared/trig"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 	"html/template"
 	"net/http"
 	"os"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+	"github.com/socialviolation/freyr/shared"
+	"github.com/socialviolation/freyr/shared/trig"
 )
 
 type Conscript struct {
@@ -51,12 +52,17 @@ func NewCaptainController() (*CaptainController, error) {
 		return nil, fmt.Errorf("error unmarshalling operator config")
 	}
 	log.Info().Msgf("operator spec: %+v", spec)
+	funcMap := template.FuncMap{
+		"formatTime": func(t time.Time) string {
+			return t.Format("15:04:05")
+		},
+	}
 
 	cc := &CaptainController{
 		cycleStaleDuration: time.Second * 3,
 		conscripts:         make(map[string]Conscript),
 		opSpec:             spec,
-		docketTmpl:         template.Must(template.New("docket").Parse(docketTemplate)),
+		docketTmpl:         template.Must(template.New("docket").Funcs(funcMap).Parse(docketTemplate)),
 	}
 
 	cc.metric, _ = newCaptainMetrics(func(ctx context.Context, observer metric.Int64Observer) error {
@@ -87,13 +93,6 @@ func (c *CaptainController) Serve(ctx context.Context, r *gin.Engine, middleware
 	c.routinePurger(ctx)
 }
 
-func (c *CaptainController) startTrace(ctx context.Context, name string) (context.Context, trace.Span) {
-	m0, _ := baggage.NewMemberRaw("metadata.name", "captain")
-	b, _ := baggage.New(m0)
-	wrappedCtx := baggage.ContextWithBaggage(ctx, b)
-	return tracer.Start(wrappedCtx, name)
-}
-
 func (c *CaptainController) enlist(g *gin.Context) {
 	ctx := g.Request.Context()
 	reqSpan := trace.SpanFromContext(otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(g.Request.Header)))
@@ -121,6 +120,8 @@ func (c *CaptainController) enlist(g *gin.Context) {
 
 type docketResponse struct {
 	Spec       shared.OperatorSpec  `json:"operator,omitempty"`
+	Name       string               `json:"name,omitempty"`
+	Namespace  string               `json:"namespace,omitempty"`
 	Conscripts map[string]time.Time `json:"conscripts"`
 	Trig       string               `json:"trig,omitempty"`
 	Target     int                  `json:"target,omitempty"`
@@ -143,6 +144,8 @@ func (c *CaptainController) docket(ctx *gin.Context) {
 
 	dr := docketResponse{
 		Spec:       c.opSpec,
+		Name:       os.Getenv("NAME"),
+		Namespace:  os.Getenv("NAME"),
 		Target:     int(target),
 		Actual:     len(c.conscripts),
 		Conscripts: make(map[string]time.Time),
@@ -159,6 +162,8 @@ func (c *CaptainController) docketHtml(ctx *gin.Context) {
 		Spec:       c.opSpec,
 		Actual:     len(c.conscripts),
 		Conscripts: make(map[string]time.Time),
+		Name:       os.Getenv("NAME"),
+		Namespace:  os.Getenv("NAMESPACE"),
 	}
 
 	for k, v := range c.conscripts {

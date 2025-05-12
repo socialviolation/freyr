@@ -1,0 +1,109 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  creationTimestamp: null
+  name: ships.freyr.fmtl.au
+spec:
+  group: freyr.fmtl.au
+  names:
+    kind: Ship
+    listKind: ShipList
+    plural: ships
+    singular: ship
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Ship is the Schema for the ships API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ShipSpec defines the desired state of Ship
+            properties:
+              captain:
+                properties:
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  image:
+                    type: string
+                type: object
+              conscript:
+                properties:
+                  envs:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  image:
+                    type: string
+                type: object
+              envs:
+                additionalProperties:
+                  type: string
+                type: object
+              mode:
+                enum:
+                - weather
+                - trig
+                type: string
+              trig:
+                properties:
+                  duration:
+                    type: string
+                  max:
+                    format: int32
+                    type: integer
+                  min:
+                    format: int32
+                    type: integer
+                type: object
+              weather:
+                properties:
+                  apiKey:
+                    type: string
+                  city:
+                    type: string
+                  country:
+                    type: string
+                required:
+                - apiKey
+                - city
+                - country
+                type: object
+            required:
+            - mode
+            type: object
+          status:
+            description: ShipStatus defines the observed state of Ship
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

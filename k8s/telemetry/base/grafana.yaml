@@ -53,30 +53,32 @@ spec:
       labels:
         app: grafana
     spec:
+      securityContext:
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
       containers:
         - name: grafana
           image: grafana/grafana:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: GF_SECURITY_ADMIN_USER
-              value: admin
+              value: atlassian
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: grafana
+              value: atlass1an
 
           ports:
             - containerPort: 3000
               name: http-grafana
               protocol: TCP
           readinessProbe:
-            failureThreshold: 3
             httpGet:
-              path: /robots.txt
+              path: /api/health
               port: 3000
-              scheme: HTTP
             initialDelaySeconds: 10
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 2
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
             failureThreshold: 3
             initialDelaySeconds: 30
@@ -108,4 +110,4 @@ spec:
   ports:
     - port: 3000
       protocol: TCP
-      targetPort: http-grafana
+      targetPort: 3000

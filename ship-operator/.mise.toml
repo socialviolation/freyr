@@ -1,0 +1,17 @@
+[tools]
+go = "1.24.0"
+
+[tasks.buildop]
+run="""
+make docker-build docker-push IMG="australia-southeast2-docker.pkg.dev/freyr-operator/imgs/operator:latest"
+"""
+[tasks.deploy]
+run="""
+make deploy IMG="australia-southeast2-docker.pkg.dev/freyr-operator/imgs/operator:latest"
+"""
+
+[tasks.bundlep]
+run="""
+make bundle IMG="australia-southeast2-docker.pkg.dev/freyr-operator/imgs/operator:latest"
+make bundle-build bundle-push IMG="australia-southeast2-docker.pkg.dev/freyr-operator/imgs/operator-bundle:latest"
+"""

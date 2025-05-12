@@ -54,6 +54,9 @@ type ShipReconciler struct {
 // +kubebuilder:rbac:groups=freyr.fmtl.au,resources=ships,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=freyr.fmtl.au,resources=ships/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=freyr.fmtl.au,resources=ships/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -86,7 +89,7 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("Reconciling Ship")
 
-	captainUrl := fmt.Sprintf("http://captain-svc.%s.svc.cluster.local:80", ns)
+	captainUrl := fmt.Sprintf("http://%s.%s.svc.cluster.local:80", ship.GetName(), ns)
 	opJson, err := json.Marshal(ship.Spec)
 	if err != nil {
 		log.Error(err, "Failed to marshal Ship spec")
@@ -109,6 +112,8 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			Data: map[string]string{
 				"CAPTAIN_URL":     captainUrl,
 				"OPERATOR_CONFIG": string(opJson),
+				"NAME":            ship.GetName(),
+				"NAMESPACE":       ship.GetNamespace(),
 			},
 		}
 
@@ -145,7 +150,7 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Captain Service
 	captainSvc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain-svc", Namespace: ns}, captainSvc)
+	err = r.Get(ctx, types.NamespacedName{Name: ship.GetName(), Namespace: ns}, captainSvc)
 	if err != nil && errors.IsNotFound(err) {
 		svc := r.serviceForCaptain(ship, captainDep.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort)
 		log.Info("Creating a new Captain Service")
@@ -350,7 +355,7 @@ func (r *ShipReconciler) deploymentForCaptain(ship *freyrv1alpha1.Ship, config *
 func (r *ShipReconciler) serviceForCaptain(ship *freyrv1alpha1.Ship, containerPort int32) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "captain-svc",
+			Name:      fmt.Sprintf("%s-svc", ship.GetName()),
 			Namespace: ship.GetNamespace(),
 		},
 		Spec: corev1.ServiceSpec{

@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ship-operator
+  name: ship-operator-ship-viewer-role
+rules:
+- apiGroups:
+  - freyr.fmtl.au
+  resources:
+  - ships
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - freyr.fmtl.au
+  resources:
+  - ships/status
+  verbs:
+  - get

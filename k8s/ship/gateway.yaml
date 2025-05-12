@@ -1,0 +1,65 @@
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: operator-cluster-gw
+  namespace: ship-operator
+spec:
+  gatewayClassName: gke-l7-global-external-managed
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: allowed
+  addresses:
+    - type: NamedAddress
+      value: "operator-static-ip"
+
+---
+
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: operator-default-backend
+  namespace: ship-operator
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: operator-cluster-gw
+  hostnames:
+    - operator.fmtl.au
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: captain-svc
+          port: 80
+
+---
+
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: monitoring-route
+  namespace: telemetry
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: operator-cluster-gw
+      namespace: ship-operator
+  hostnames:
+    - operator-grafana.fmtl.au
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: grafana-service
+          port: 3000

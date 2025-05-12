@@ -1,7 +1,7 @@
-# Namespace where the Telemetry will be created
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: telemetry
+  name: ship-operator
   labels:
+    name: operator
     gateway-access: allowed

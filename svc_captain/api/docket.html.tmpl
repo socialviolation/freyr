@@ -1,20 +1,43 @@
 <html lang="en">
 <head>
-    <title>Freyr Docket</title>
+    <title>Ship Docket</title>
     <style>
     </style>
 </head>
 <body>
-<h1>Freyr Docket</h1>
+<h1>Ship Docket</h1>
+<div style="
+    border: 1px solid gray;
+    padding: 1rem;
+">
+  Hey there!<br>
+  You're viewing a Custom K8s Ship Resource managed by a custom Kubernetes operator.<br>
+  This operator was built using the <a href="https://sdk.operatorframework.io/">Operator SDK</a>.
+  <ul style="margin: 0;">
+    <li><a href="https://github.com/socialviolation/freyr" target="_blank">View the Code & Architecture</a></li>
+    <li><a href="mailto:nick@fmtl.au" target="_blank">Made with ❤️ by Nick</a></li>
+  </ul>
+  <br>
+  This particular CR is named <strong>{{ .Name }}</strong>. The operator periodically scales "Conscript" replicas, which
+  register with the "Captain" once they're ready - and disappear when they have been terminated.<br>
+  You'll notice the difference between the target and actual replica counts—any delta is typically due to delays during scaling.
+</div>
 <div>
-    <div><strong>Spec:</strong> {{.Spec.Mode}}</div>
+	<ul>
+	    <li><strong>CRD Name: </strong> {{ .Name }}</li>
+	    <li><strong>Namespace: </strong> {{ .Namespace }}</li>
+	    <li><strong>Mode:</strong> {{.Spec.Mode}}</li>
+	</ul>
+</div>
+<div>
     {{ if eq .Spec.Mode "trig" }}
+    <p>Scaling Schedule Chart - {{ .Spec.Trig.Duration }} </p>
     <pre><code>{{.Trig}}</code></pre>
     {{end}}
 </div>
 <div>
     <div>
-        <strong>Conscripts:</strong>
+        <strong>Conscript Pings:</strong>
         <ul>
             <li><strong>Target: </strong> {{ .Target }}</li>
             <li><strong>Actual: </strong> {{ .Actual }}</li>
@@ -22,7 +45,7 @@
     </div>
     <ul>
         {{ range $key, $value := .Conscripts }}
-        <li><strong>{{ $key }}</strong>: {{ $value }}</li>
+        <li><strong>{{ $key }}</strong> pinged @ {{ $value | formatTime }}</li>
         {{ end }}
     </ul>
 </div>
@@ -30,6 +53,6 @@
 <script>
     setTimeout(function () {
         window.location.reload();
-    }, 1000);
+    }, 2000);
 </script>
 </html>

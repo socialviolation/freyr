@@ -1,0 +1,14 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: operator-ingress
+  namespace: ship-operator
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "operator-static-ip"
+spec:
+  defaultBackend:
+    service:
+      name: captain-svc
+      port:
+        number: 80

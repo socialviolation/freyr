@@ -1,21 +1,14 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ship-operator
-  labels:
-    name: operator
----
 apiVersion: freyr.fmtl.au/v1alpha1
 kind: Ship
 metadata:
   name: black-pearl
   namespace: ship-operator
 spec:
-  registry: 
+  registry:
   mode: trig
   trig:
-    duration: 600s
+    duration: 300s
     min: 1
-    max: 16
+    max: 6
   envs:
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector-service.telemetry.svc.cluster.local:4318/"
