@@ -5,7 +5,7 @@ dir = ".."
 run = """
 #!/usr/bin/env bash
 echo "🐳 Building Docker Image"
-docker build -t australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest -f svc_captain/Dockerfile .
+docker build -t australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:demo -f svc_captain/Dockerfile .
 """
 alias = 'b'
 
@@ -16,5 +16,5 @@ alias = 'p'
 run = """
 #!/usr/bin/env bash
 echo "🐳 Pushing Docker Image"
-docker push australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:latest
+docker push australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:demo
 """

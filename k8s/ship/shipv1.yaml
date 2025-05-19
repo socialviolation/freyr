@@ -4,7 +4,8 @@ metadata:
   name: black-pearl
   namespace: ship-operator
 spec:
-  registry:
+  captain:
+    image: australia-southeast2-docker.pkg.dev/freyr-operator/imgs/captain:demo
   mode: trig
   trig:
     duration: 300s

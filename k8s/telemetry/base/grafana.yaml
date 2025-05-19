@@ -45,6 +45,11 @@ metadata:
     app: grafana
   name: grafana
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app: grafana
@@ -54,9 +59,9 @@ spec:
         app: grafana
     spec:
       securityContext:
-        runAsUser: 472
-        runAsGroup: 472
-        fsGroup: 472
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
       containers:
         - name: grafana
           image: grafana/grafana:latest
@@ -66,15 +71,17 @@ spec:
               value: atlassian
             - name: GF_SECURITY_ADMIN_PASSWORD
               value: atlass1an
+            - name: GF_SERVER_HTTP_PORT
+              value: "80"
 
           ports:
-            - containerPort: 3000
+            - containerPort: 80
               name: http-grafana
               protocol: TCP
           readinessProbe:
             httpGet:
-              path: /api/health
-              port: 3000
+              path: /robots.txt
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 3
@@ -84,8 +91,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             successThreshold: 1
-            tcpSocket:
-              port: 3000
+            httpGet:
+              path: /robots.txt
+              port: 80
             timeoutSeconds: 1
           volumeMounts:
             - mountPath: /var/lib/grafana
@@ -104,10 +112,47 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana-service
+  annotations:
+    cloud.google.com/neg: '{"ingress": true, "exposed_ports": {"80":{}}}'
 spec:
   selector:
     app: grafana
   ports:
-    - port: 3000
+    - port: 80
       protocol: TCP
-      targetPort: 3000
+      targetPort: 80
+
+---
+
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: monitoring-route
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: grafana-gw2
+  hostnames:
+    - operator-grafana.fmtl.au
+  rules:
+    - backendRefs:
+        - name: grafana-service
+          port: 80
+
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: grafana-hcp
+spec:
+  default:
+    logConfig:
+      enabled: true
+    config:
+      type: HTTP
+      httpHealthCheck:
+        requestPath: /robots.txt
+  targetRef:
+    group: ""
+    kind: Service
+    name: grafana-service

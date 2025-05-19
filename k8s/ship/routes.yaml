@@ -1,0 +1,18 @@
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: operator-route
+  namespace: ship-operator
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: operator-cluster-gw
+  hostnames:
+    - operator.fmtl.au
+  rules:
+    - backendRefs:
+        - name: black-pearl-svc
+          port: 80
+
+---
+

@@ -3,8 +3,8 @@ kind: Kustomization
 namespace: telemetry
 resources:
   - namespace.yaml
+  - gateway.yaml
   - prometheus.yaml
   - jaeger.yaml
   - otel-collector.yaml
   - grafana.yaml
-  - ingress.yaml

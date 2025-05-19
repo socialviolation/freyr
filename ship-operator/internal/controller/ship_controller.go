@@ -89,19 +89,20 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("Reconciling Ship")
 
-	captainUrl := fmt.Sprintf("http://%s.%s.svc.cluster.local:80", ship.GetName(), ns)
+	captainUrl := fmt.Sprintf("http://%s-svc.%s.svc.cluster.local:80", ship.GetName(), ns)
 	opJson, err := json.Marshal(ship.Spec)
 	if err != nil {
 		log.Error(err, "Failed to marshal Ship spec")
 		return ctrl.Result{}, err
 	}
 
+	confName := fmt.Sprintf("%s-config", ship.GetName())
 	configMap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: "config", Namespace: ns}, configMap)
+	err = r.Get(ctx, types.NamespacedName{Name: confName, Namespace: ns}, configMap)
 	if err != nil && errors.IsNotFound(err) {
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "config",
+				Name:      confName,
 				Namespace: req.Namespace,
 				Labels: map[string]string{
 					"app.kubernetes.io/managed-by": "ship-operator",
@@ -127,7 +128,7 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	captainDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "captain", Namespace: ns}, captainDep)
+	err = r.Get(ctx, types.NamespacedName{Name: ship.GetName() + "-captain", Namespace: ns}, captainDep)
 	if err != nil && errors.IsNotFound(err) {
 		dep := r.deploymentForCaptain(ship, configMap)
 		if dep == nil {
@@ -150,7 +151,7 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Captain Service
 	captainSvc := &corev1.Service{}
-	err = r.Get(ctx, types.NamespacedName{Name: ship.GetName(), Namespace: ns}, captainSvc)
+	err = r.Get(ctx, types.NamespacedName{Name: ship.GetName() + "-svc", Namespace: ship.GetNamespace()}, captainSvc)
 	if err != nil && errors.IsNotFound(err) {
 		svc := r.serviceForCaptain(ship, captainDep.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort)
 		log.Info("Creating a new Captain Service")
@@ -167,7 +168,7 @@ func (r *ShipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Conscript
 	conscriptDep := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: "conscript", Namespace: ns}, conscriptDep)
+	err = r.Get(ctx, types.NamespacedName{Name: ship.GetName() + "-conscript", Namespace: ns}, conscriptDep)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForConscript(ship)
@@ -296,7 +297,7 @@ func (r *ShipReconciler) deploymentForCaptain(ship *freyrv1alpha1.Ship, config *
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "captain",
+			Name:      ship.GetName() + "-captain",
 			Namespace: ship.GetNamespace(),
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -311,7 +312,7 @@ func (r *ShipReconciler) deploymentForCaptain(ship *freyrv1alpha1.Ship, config *
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Image: ship.Spec.Captain.Image,
-						Name:  "captain",
+						Name:  ship.GetName() + "-captain",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5001,
 						}},
@@ -322,11 +323,14 @@ func (r *ShipReconciler) deploymentForCaptain(ship *freyrv1alpha1.Ship, config *
 								corev1.ResourceMemory: resource.MustParse("256Mi"),
 							},
 						},
-						Env: []corev1.EnvVar{},
+						Env: []corev1.EnvVar{
+							{Name: "NAME", Value: ship.GetName()},
+							{Name: "NAMESPACE", Value: ship.GetNamespace()},
+						},
 						EnvFrom: []corev1.EnvFromSource{{
 							ConfigMapRef: &corev1.ConfigMapEnvSource{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "config",
+									Name: ship.GetName() + "-config",
 								},
 							},
 						}},
@@ -355,12 +359,11 @@ func (r *ShipReconciler) deploymentForCaptain(ship *freyrv1alpha1.Ship, config *
 func (r *ShipReconciler) serviceForCaptain(ship *freyrv1alpha1.Ship, containerPort int32) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-svc", ship.GetName()),
+			Name:      ship.GetName() + "-svc",
 			Namespace: ship.GetNamespace(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app":                          "captain",
 				"app.kubernetes.io/managed-by": "ship-operator",
 				"app.kubernetes.io/owner":      ship.GetName(),
 				"app.kubernetes.io/owner-ns":   ship.GetNamespace(),
@@ -399,7 +402,7 @@ func (r *ShipReconciler) deploymentForConscript(ship *freyrv1alpha1.Ship) *appsv
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "conscript",
+			Name:      ship.GetName() + "-conscript",
 			Namespace: ship.GetNamespace(),
 			Labels:    ls,
 		},
@@ -411,20 +414,20 @@ func (r *ShipReconciler) deploymentForConscript(ship *freyrv1alpha1.Ship) *appsv
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:    ls,
-					Name:      "conscript",
+					Name:      ship.GetName() + "-conscript",
 					Namespace: ship.GetNamespace(),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Image: ship.Spec.Conscript.Image,
-						Name:  "conscript",
+						Name:  ship.GetName() + "-conscript",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 5003,
 						}},
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceCPU:    resource.MustParse("5m"),
 								corev1.ResourceMemory: resource.MustParse("50Mi"),
 							},
 						},
@@ -434,7 +437,7 @@ func (r *ShipReconciler) deploymentForConscript(ship *freyrv1alpha1.Ship) *appsv
 								ValueFrom: &corev1.EnvVarSource{
 									ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "config",
+											Name: ship.GetName() + "-config",
 										},
 										Key: "CAPTAIN_URL",
 									},

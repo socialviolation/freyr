@@ -1,8 +1,7 @@
 kind: Gateway
 apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
-  name: operator-cluster-gw
-  namespace: ship-operator
+  name: grafana-gw2
 spec:
   gatewayClassName: gke-l7-global-external-managed
   listeners:
@@ -17,4 +16,4 @@ spec:
               gateway-access: allowed
   addresses:
     - type: NamedAddress
-      value: "operator-static-ip"
+      value: "grafana-static-ip2"
