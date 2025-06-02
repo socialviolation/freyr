@@ -1,7 +1,0 @@
-# Namespace where the Telemetry will be created
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: telemetry
-  labels:
-    gateway-access: allowed
