@@ -5,14 +5,12 @@ metadata:
   namespace: ship-operator
 spec:
   parentRefs:
-    - kind: Gateway
-      name: operator-cluster-gw
+    - name: cluster-gw
+      namespace: nginx-gateway
+      sectionName: http
   hostnames:
     - operator.fmtl.au
   rules:
     - backendRefs:
-        - name: black-pearl-svc
+        - name: black-pearl
           port: 80
-
----
-

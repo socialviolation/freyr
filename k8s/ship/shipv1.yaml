@@ -9,7 +9,7 @@ spec:
   mode: trig
   trig:
     duration: 300s
-    min: 1
-    max: 6
+    min: 5
+    max: 15
   envs:
-    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector-service.telemetry.svc.cluster.local:4318/"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel.telemetry.svc.cluster.local:4318"

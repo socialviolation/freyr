@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: australia-southeast2-docker.pkg.dev/freyr-operator/imgs/operator
-  newTag: latest
+  newTag: v1.0.0
